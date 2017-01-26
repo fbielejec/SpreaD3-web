@@ -44,13 +44,7 @@ public class ContinuousTreeController {
 	@RequestMapping(path = "/tree", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
 	public String tree(@RequestParam(value = "treefile", required = true) MultipartFile file) throws IOException {
-		
-		
 		storageService.store(file);
-		
-		System.err.println(file.getOriginalFilename());
-		System.err.println("@rootLocation "+storageService.getRootLocation().toString());
-		
 		model.setTree(storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
 		return "success";
 	}
@@ -77,7 +71,7 @@ public class ContinuousTreeController {
 
 	}
 
-	@RequestMapping(path = "/external_anotations", method = RequestMethod.POST)
+	@RequestMapping(path = "/external_annotations", method = RequestMethod.POST)
 	public void externalAnnotations(HttpServletRequest request, HttpServletResponse response) {
 
 	}

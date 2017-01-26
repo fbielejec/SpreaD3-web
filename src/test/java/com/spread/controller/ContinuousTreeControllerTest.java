@@ -1,5 +1,6 @@
 package com.spread.controller;
 
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.File;
@@ -13,13 +14,12 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import com.spread.model.storage.StorageService;
+import com.spread.utils.TestUtils;
 
 @RunWith(SpringRunner.class)
 @AutoConfigureMockMvc
@@ -29,16 +29,12 @@ public class ContinuousTreeControllerTest {
 	@Autowired
 	private MockMvc mockMvc;
 
-//	@MockBean
-//	private StorageService storageService;
-
 	@Before
-	public void init() {
-		
+	public void init() throws Exception {
+		uploadTree();
 	}
-	
-	@Test
-	public void treeTest() throws Exception {
+
+	public void uploadTree() throws Exception {
 		String filename = "continuous/speciesDiffusion.MCC.tre";
 		File treefile = new File(getClass().getClassLoader().getResource(filename).getFile());
 
@@ -52,14 +48,19 @@ public class ContinuousTreeControllerTest {
 				.file(new MockMultipartFile(name, originalFileName, contentType, content))).andExpect(status().is(200));
 	}
 
-	// TODO
 	@Test
-	public void attributesTest() {
-
-		
-		
-		
-		
+	public void attributesTest() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.get("/continuous/attributes")).andExpect(status().isOk())
+				.andExpect(content().string(TestUtils.attributes));
 	}
 
+	//TODO
+	@Test
+	public void coordinatesTest() throws Exception {
+	
+	
+	
+	}
+	
+	
 }
