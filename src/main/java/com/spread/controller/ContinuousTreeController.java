@@ -41,6 +41,14 @@ public class ContinuousTreeController {
 		this.model = new ContinuousTreeModel();
 	}
 
+	@RequestMapping(path = "/model", method = RequestMethod.GET, produces = "application/json")
+	public ResponseEntity<ContinuousTreeModel> model() throws IOException, ImportException {
+		return ResponseEntity.ok()
+				.header(new HttpHeaders().toString())
+				.body(model);
+	}
+	
+	
 	@RequestMapping(path = "/tree", method = RequestMethod.POST, produces = "application/json")
 	public ResponseEntity<Void> tree(@RequestParam(value = "treefile", required = true) MultipartFile file)
 			throws IOException {

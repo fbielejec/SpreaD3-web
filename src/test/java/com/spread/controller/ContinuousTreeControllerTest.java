@@ -1,5 +1,6 @@
 package com.spread.controller;
 
+import static org.junit.Assert.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -20,6 +21,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import com.google.gson.Gson;
+import com.spread.model.ContinuousTreeModel;
 import com.spread.utils.TestUtils;
 
 @RunWith(SpringRunner.class)
@@ -61,12 +64,26 @@ public class ContinuousTreeControllerTest {
 				.andExpect(content().string(TestUtils.attributes));
 	}
 
-	//TODO
 	@Test
 	public void coordinatesTest() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/coordinates/y").param("attribute",  TestUtils.yCoordinate)).andExpect(status().isOk()) ;
 		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/coordinates/x").param("attribute",  TestUtils.xCoordinate)).andExpect(status().isOk()) ;
+	
+		String content = mockMvc.perform(MockMvcRequestBuilders.get("/continuous/model")).andReturn().getResponse().getContentAsString();
+		String xCoordinate = new Gson().fromJson(content, ContinuousTreeModel.class).xCoordinate;
+		String yCoordinate = new Gson().fromJson(content, ContinuousTreeModel.class).yCoordinate;
+
+		assertEquals(TestUtils.xCoordinate, xCoordinate);
+		assertEquals(TestUtils.yCoordinate, yCoordinate);
 	}
+	
+	@Test
+	public void externalAnnotationsTest() throws Exception {
+		
+		
+		
+	}
+	
 	
 	
 }
