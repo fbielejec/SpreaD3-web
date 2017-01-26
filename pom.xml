@@ -118,7 +118,7 @@
 
 		<repository>
 			<id>jebl</id>
-			<url>https://www.stat.ubc.ca/~bouchard/maven/jebl/</url>
+			<url>http://www.stat.ubc.ca/~bouchard/maven/jebl/</url>
 		</repository>
 
 	</repositories>

@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/phylogeography/SpreaD3-web.svg?branch=master)](https://travis-ci.org/phylogeography/SpreaD3-web)
+
 .:: SpreaD3-web ::.
 ===================
 
