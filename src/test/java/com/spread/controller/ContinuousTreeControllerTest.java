@@ -24,7 +24,7 @@ import com.spread.model.storage.StorageService;
 @RunWith(SpringRunner.class)
 @AutoConfigureMockMvc
 @SpringBootTest
-public class ContinuousTreeControllerTests {
+public class ContinuousTreeControllerTest {
 
 	@Autowired
 	private MockMvc mockMvc;
