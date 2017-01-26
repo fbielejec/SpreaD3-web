@@ -1,0 +1,5 @@
+target/
+upload-dir/
+.settings/
+.classpath
+.project

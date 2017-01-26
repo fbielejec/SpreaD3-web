@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# upload tree file
+curl -X POST -H "Content-Type: multipart/form-data" -F "treefile=@/home/filip/Dropbox/JavaProjects/spread3-web/src/test/resources/continuous/speciesDiffusion.MCC.tre" http://localhost:8080/continuous/tree 
+
+echo -e '\n'
+
+# list attributes
+curl -X GET http://localhost:8080/continuous/attributes 
+
+echo -e '\n'
+
+
