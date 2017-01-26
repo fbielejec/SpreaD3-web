@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,12 +27,18 @@ import com.spread.utils.TestUtils;
 @SpringBootTest
 public class ContinuousTreeControllerTest {
 
+	private static boolean setUp = false;
+	
 	@Autowired
 	private MockMvc mockMvc;
 
 	@Before
-	public void init() throws Exception {
+	public void setUp() throws Exception {
+		if(setUp) {
+			return;
+		}
 		uploadTree();
+		setUp = true;
 	}
 
 	public void uploadTree() throws Exception {

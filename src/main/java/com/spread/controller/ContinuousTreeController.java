@@ -49,6 +49,11 @@ public class ContinuousTreeController {
 		return "success";
 	}
 
+	@RequestMapping(path = "/trees", method = RequestMethod.DELETE)
+	public void deleteAll() {
+		storageService.deleteAll();
+	}
+	
 	@RequestMapping(path = "/attributes", method = RequestMethod.GET, produces = "application/json")
 	public ResponseEntity<Set<String>> attributes() throws IOException, ImportException {
 
