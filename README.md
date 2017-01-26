@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/phylogeography/SpreaD3-web.svg?branch=master)](https://travis-ci.org/phylogeography/SpreaD3-web)
+[![Build Status](https://travis-ci.org/phylogeography/SpreaD3-web.svg?branch=master)](https://travis-ci.org/phylogeography/SpreaD3-web) [![codecov.io](https://codecov.io/gh/phylogeography/SpreaD3-web/coverage.svg?branch=master)](https://codecov.io/gh/phylogeography/SpreaD3-web?branch=master)
 
 .:: SpreaD3-web ::.
 ===================
