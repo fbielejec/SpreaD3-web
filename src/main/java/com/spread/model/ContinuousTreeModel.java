@@ -16,7 +16,7 @@ public class ContinuousTreeModel {
 	public String xCoordinate = null; // long
 	public String yCoordinate = null; // lat
 
-	public String hpd = "";
+	public Double hpdLevel;
 	
 	// ---OPTIONAL---//
 

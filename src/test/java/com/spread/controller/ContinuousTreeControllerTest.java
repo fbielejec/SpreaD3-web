@@ -1,6 +1,6 @@
 package com.spread.controller;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -9,7 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -79,10 +78,14 @@ public class ContinuousTreeControllerTest {
 	
 	@Test
 	public void externalAnnotationsTest() throws Exception {
-		
-		
-		
+		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/external-annotations").param("has-external-annotations", "true")).andExpect(status().isOk()) ;
 	}
+	
+	@Test
+	public void hpdLevelTest() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/hpd-level").param("hpd-level", "1.1")).andExpect(status().isUnprocessableEntity()) ;
+	}
+	
 	
 	
 	
