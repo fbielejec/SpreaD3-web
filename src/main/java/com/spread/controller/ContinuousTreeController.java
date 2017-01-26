@@ -10,11 +10,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -42,18 +42,19 @@ public class ContinuousTreeController {
 	}
 
 	@RequestMapping(path = "/tree", method = RequestMethod.POST, produces = "application/json")
-	@ResponseBody
-	public String tree(@RequestParam(value = "treefile", required = true) MultipartFile file) throws IOException {
+	public ResponseEntity<Void> tree(@RequestParam(value = "treefile", required = true) MultipartFile file)
+			throws IOException {
 		storageService.store(file);
 		model.setTree(storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
-		return "success";
+		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
-	@RequestMapping(path = "/trees", method = RequestMethod.DELETE)
-	public void deleteAll() {
-		storageService.deleteAll();
+	@RequestMapping(path = "/tree", method = RequestMethod.DELETE)
+	public ResponseEntity<Void> deleteTree(@RequestParam(value = "treefile", required = true) String filename) {
+		storageService.delete(filename);
+		return new ResponseEntity<>(HttpStatus.OK);
 	}
-	
+
 	@RequestMapping(path = "/attributes", method = RequestMethod.GET, produces = "application/json")
 	public ResponseEntity<Set<String>> attributes() throws IOException, ImportException {
 
@@ -67,13 +68,15 @@ public class ContinuousTreeController {
 	}
 
 	@RequestMapping(value = { "/coordinates/y", "/coordinates/latitude" }, method = RequestMethod.POST)
-	public void coordinatesY(HttpServletRequest request, HttpServletResponse response) {
-
+	public ResponseEntity<Void> coordinatesY(@RequestParam(value = "attribute", required = true) String attribute) {
+		model.yCoordinate = attribute;
+		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
 	@RequestMapping(value = { "/coordinates/x", "/coordinates/longitude" }, method = RequestMethod.POST)
-	public void coordinatesX(HttpServletRequest request, HttpServletResponse response) {
-
+	public ResponseEntity<Void> coordinatesX(@RequestParam(value = "attribute", required = true) String attribute) {
+		model.xCoordinate = attribute;
+		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
 	@RequestMapping(path = "/external_annotations", method = RequestMethod.POST)

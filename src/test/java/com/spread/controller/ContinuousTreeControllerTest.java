@@ -52,7 +52,7 @@ public class ContinuousTreeControllerTest {
 		byte[] content = Files.readAllBytes(path);
 
 		mockMvc.perform(MockMvcRequestBuilders.fileUpload("/continuous/tree")
-				.file(new MockMultipartFile(name, originalFileName, contentType, content))).andExpect(status().is(200));
+				.file(new MockMultipartFile(name, originalFileName, contentType, content))).andExpect(status().isOk());
 	}
 
 	@Test
@@ -64,9 +64,8 @@ public class ContinuousTreeControllerTest {
 	//TODO
 	@Test
 	public void coordinatesTest() throws Exception {
-	
-	
-	
+		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/coordinates/y").param("attribute",  TestUtils.yCoordinate)).andExpect(status().isOk()) ;
+		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/coordinates/x").param("attribute",  TestUtils.xCoordinate)).andExpect(status().isOk()) ;
 	}
 	
 	
