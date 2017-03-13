@@ -1,32 +1,43 @@
 package com.spread.model;
 
-public class ContinuousTreeModelDTO {
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "continuous_tree_model")
+@NamedQueries(value = {
+		@NamedQuery(name = ContinuousTreeModelEntity.FIND_BY_ID, query = "from continuous_tree_model e where e.id=:id") })
+public class ContinuousTreeModelEntity implements LongID {
+
+	public static final String FIND_BY_ID = "ContinuousTreeModelEntity.byId";
+
+	private Long id;
 
 	private String treeFilename = null;
 	private String xCoordinate = null; // long
 	private String yCoordinate = null; // lat
-	private Double hpdLevel = null;
+	private Double hpdLevel;
 	private String mrsd = "0/0/0";
 	private double timescaleMultiplier = 1.0;
+	private String outputFilename = "output.json";
 	private String geojsonFilename = null;
 	private boolean hasExternalAnnotations = false;
-	private String outputFilename = "output.json";
-	
-	public ContinuousTreeModelDTO() {
+
+	@Override
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	public Long getId() {
+		return id;
 	}
 
-	public ContinuousTreeModelDTO(String treeFilename, String xCoordinate, String yCoordinate, Double hpdLevel,
-			String mrsd, double timescaleMultiplier, String outputFilename, String geojsonFilename,
-			boolean hasExternalAnnotations) {
-		this.treeFilename = treeFilename;
-		this.xCoordinate = xCoordinate;
-		this.yCoordinate = yCoordinate;
-		this.hpdLevel = hpdLevel;
-		this.mrsd = mrsd;
-		this.timescaleMultiplier = timescaleMultiplier;
-		this.outputFilename = outputFilename;
-		this.geojsonFilename = geojsonFilename;
-		this.hasExternalAnnotations = hasExternalAnnotations;
+	@Override
+	public void setId(Long id) {
+		this.id = id;
 	}
 
 	public String getxCoordinate() {
@@ -99,6 +110,11 @@ public class ContinuousTreeModelDTO {
 
 	public void setTreeFilename(String treeFilename) {
 		this.treeFilename = treeFilename;
+	}
+
+	public ContinuousTreeModelDTO toDto() {
+		return new ContinuousTreeModelDTO(treeFilename, xCoordinate, yCoordinate, hpdLevel, mrsd, timescaleMultiplier,
+				outputFilename, geojsonFilename, hasExternalAnnotations);
 	}
 
 }

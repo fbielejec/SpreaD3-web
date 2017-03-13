@@ -24,21 +24,24 @@ import com.google.gson.Gson;
 import com.spread.model.ContinuousTreeModelDTO;
 import com.spread.utils.TestUtils;
 
+//TODO: hibernate integration testing with H2 https://vladmihalcea.com/2013/12/04/hibernate-facts-integration-testing-strategies/
+
 @RunWith(SpringRunner.class)
 @AutoConfigureMockMvc
 @SpringBootTest
 public class ContinuousTreeControllerTest {
 
 	private static boolean setUp = false;
-	
+
 	@Autowired
 	private MockMvc mockMvc;
 
 	@Before
 	public void setUp() throws Exception {
-		if(setUp) {
+		if (setUp) {
 			return;
 		}
+
 		uploadTree();
 		setUp = true;
 	}
@@ -65,34 +68,46 @@ public class ContinuousTreeControllerTest {
 
 	@Test
 	public void coordinatesTest() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/coordinates/y").param("attribute",  TestUtils.yCoordinate)).andExpect(status().isOk()) ;
-		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/coordinates/x").param("attribute",  TestUtils.xCoordinate)).andExpect(status().isOk()) ;
-	
-		String content = mockMvc.perform(MockMvcRequestBuilders.get("/continuous/model")).andReturn().getResponse().getContentAsString();
-		String xCoordinate = new Gson().fromJson(content, ContinuousTreeModelDTO.class).xCoordinate;
-		String yCoordinate = new Gson().fromJson(content, ContinuousTreeModelDTO.class).yCoordinate;
+		mockMvc.perform(
+				MockMvcRequestBuilders.post("/continuous/coordinates/y").param("attribute", TestUtils.yCoordinate))
+				.andExpect(status().isOk());
+		mockMvc.perform(
+				MockMvcRequestBuilders.post("/continuous/coordinates/x").param("attribute", TestUtils.xCoordinate))
+				.andExpect(status().isOk());
+
+		String content = mockMvc.perform(MockMvcRequestBuilders.get("/continuous/model")).andReturn().getResponse()
+				.getContentAsString();
+		String xCoordinate = new Gson().fromJson(content, ContinuousTreeModelDTO.class).getxCoordinate();
+		String yCoordinate = new Gson().fromJson(content, ContinuousTreeModelDTO.class).getyCoordinate();
 
 		assertEquals(TestUtils.xCoordinate, xCoordinate);
 		assertEquals(TestUtils.yCoordinate, yCoordinate);
 	}
-	
+
 	@Test
 	public void externalAnnotationsTest() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/external-annotations").param("has-external-annotations", "true")).andExpect(status().isOk()) ;
+		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/external-annotations")
+				.param("has-external-annotations", "true")).andExpect(status().isOk());
 	}
-	
+
 	@Test
 	public void hpdLevelTest() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/hpd-level").param("hpd-level", "1.1")).andExpect(status().isUnprocessableEntity());
-		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/hpd-level").param("hpd-level", "0.95")).andExpect(status().isOk());
+		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/hpd-level").param("hpd-level", "1.1"))
+				.andExpect(status().isUnprocessableEntity());
+		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/hpd-level").param("hpd-level", "0.95"))
+				.andExpect(status().isOk());
 	}
-	
+
 	@Test
 	public void timescaleMultiplierTest() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/timescale-multiplier").param("timescale-multiplier", "-1.0")).andExpect(status().isUnprocessableEntity());
-		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/timescale-multiplier").param("timescale-multiplier", "1.0")).andExpect(status().isOk());
+		mockMvc.perform(
+				MockMvcRequestBuilders.post("/continuous/timescale-multiplier").param("timescale-multiplier", "-1.0"))
+				.andExpect(status().isUnprocessableEntity());
+		mockMvc.perform(
+				MockMvcRequestBuilders.post("/continuous/timescale-multiplier").param("timescale-multiplier", "1.0"))
+				.andExpect(status().isOk());
 	}
-	
+
 	@Test
 	public void geojsonTest() throws Exception {
 		String filename = "geojson/subregion_Australia_and_New_Zealand_subunits.geojson";
@@ -107,9 +122,5 @@ public class ContinuousTreeControllerTest {
 		mockMvc.perform(MockMvcRequestBuilders.fileUpload("/continuous/geojson")
 				.file(new MockMultipartFile(name, originalFileName, contentType, content))).andExpect(status().isOk());
 	}
-	
-	
-	
-	
-	
+
 }

@@ -26,9 +26,19 @@ REST Web Services to SpreaD3, capable of generating links with on-line visualisa
 ## CONTRIBUTING
 Very much welcomed. Contact for details.
 
+## Profiles
+
+mvn -Pproduction
+
+mvn -Ptest
+
 ## Dev
 
 mvn spring-boot:run
+
+## migration
+
+mvn -Pproduction liquibase:update
 
 ## Demo
 

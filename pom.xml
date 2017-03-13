@@ -32,7 +32,19 @@
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-hateoas</artifactId>
+			<artifactId>spring-boot-starter-jdbc</artifactId>
+			<version>${sprint.boot.version}</version>
+		</dependency>
+
+		<!-- <dependency> -->
+		<!-- <groupId>org.springframework.boot</groupId> -->
+		<!-- <artifactId>spring-boot-starter-hateoas</artifactId> -->
+		<!-- <version>${sprint.boot.version}</version> -->
+		<!-- </dependency> -->
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-actuator</artifactId>
 			<version>${sprint.boot.version}</version>
 		</dependency>
 
@@ -54,16 +66,43 @@
 			<version>2.8.0</version>
 		</dependency>
 
-		<!-- DEV -->
+		<!-- PERSISTENCE -->
 
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-devtools</artifactId>
-			<version>${sprint.boot.version}</version>
-			<optional>true</optional>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-core</artifactId>
+			<version>5.2.6.Final</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.modelmapper</groupId>
+			<artifactId>modelmapper</artifactId>
+			<version>0.7.5</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.liquibase</groupId>
+			<artifactId>liquibase-core</artifactId>
+			<version>3.3.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>9.4-1201-jdbc41</version>
+		</dependency>
+
+		<!-- DEV -->
+
+		<!-- <dependency> -->
+		<!-- <groupId>org.springframework.boot</groupId> -->
+		<!-- <artifactId>spring-boot-devtools</artifactId> -->
+		<!-- <version>${sprint.boot.version}</version> -->
+		<!-- <optional>true</optional> -->
+		<!-- </dependency> -->
+
 		<!-- TEST -->
+
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -83,6 +122,13 @@
 			<artifactId>mockito-all</artifactId>
 			<version>1.9.5</version>
 			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<version>1.4.193</version>
+			<scope>runtime</scope>
 		</dependency>
 
 	</dependencies>
@@ -137,6 +183,30 @@
 					</execution>
 				</executions>
 			</plugin>
+
+			<!-- liquibase -->
+			<!-- <plugin> -->
+			<!-- <groupId>org.liquibase</groupId> -->
+			<!-- <artifactId>liquibase-maven-plugin</artifactId> -->
+			<!-- <version>3.0.5</version> -->
+			<!-- <configuration> -->
+			<!-- <changeLogFile> -->
+			<!-- ${basedir}/src/main/resources/liquibase/db.changelog-master.xml -->
+			<!-- </changeLogFile> -->
+			<!-- <driver>org.postgresql.Driver</driver> -->
+			<!-- <url>jdbc:postgresql://localhost:5432/postgres</url> -->
+			<!-- defined in settings.xml. Chnage maven profile before running update -->
+			<!-- <username>${postgre.login}</username> -->
+			<!-- <password>${postgre.password}</password> -->
+			<!-- </configuration> -->
+			<!-- <executions> -->
+			<!-- <execution> -->
+			<!-- <goals> -->
+			<!-- <goal>update</goal> -->
+			<!-- </goals> -->
+			<!-- </execution> -->
+			<!-- </executions> -->
+			<!-- </plugin> -->
 
 		</plugins>
 

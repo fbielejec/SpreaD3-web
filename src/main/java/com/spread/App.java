@@ -14,6 +14,7 @@ import com.spread.model.storage.StorageService;
 public class App {
 
 	public static void main(String[] args) {
+//		 ApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
 		SpringApplication.run(App.class, args);
 	}
 

@@ -4,9 +4,6 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -17,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.spread.controller.bean.IContinuousTreeService;
 import com.spread.controller.loggers.ILogger;
 import com.spread.controller.loggers.LoggerFactory;
 import com.spread.model.ContinuousTreeModelDTO;
@@ -32,45 +30,39 @@ public class ContinuousTreeController {
 
     private final ILogger logger;
 	private final StorageService storageService;
-	private final ContinuousTreeModelDTO dto;
+	private ContinuousTreeModelDTO dto;
 
 	@Autowired
+	IContinuousTreeService continuousTreeService;
+    
 	public ContinuousTreeController(StorageService storageService) {
 		this.logger = new LoggerFactory().getLogger(LoggerFactory.DEFAULT);
 		this.storageService = storageService;
-		this.dto = new ContinuousTreeModelDTO();
 	}
 
-	@RequestMapping(path = "/geojson", method = RequestMethod.POST)
-	public ResponseEntity<Object> uploadGeojson(@RequestParam(value = "geojsonfile", required = true) MultipartFile file) throws IOException {
-		storageService.store(file);
-		dto.setGeojsonFilename(storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
-		logger.log("geojson file successfully uploaded.", ILogger.INFO);
-		
-		return new ResponseEntity<>(HttpStatus.OK);
-	}
-	
-	@RequestMapping(path = "/geojson", method = RequestMethod.DELETE)
-	public ResponseEntity<Object> deleteGeojson(@RequestParam(value = "geojsonfile", required = true) MultipartFile file) throws IOException {
-		storageService.store(file);
-		dto.setGeojsonFilename(storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
-		logger.log("geojson file successfully deleted.", ILogger.INFO);
-		
-		return new ResponseEntity<>(HttpStatus.OK);
-	}
-	
 	@RequestMapping(path = "/tree", method = RequestMethod.POST)
 	public ResponseEntity<Void> uploadTree(@RequestParam(value = "treefile", required = true) MultipartFile file)
 			throws IOException {
+
+		// store the file
 		storageService.store(file);
+		
+		// create and persist new entity
+		this.dto = new ContinuousTreeModelDTO();
 		dto.setTreeFilename(storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
-		logger.log("tree file successfully uploaded.", ILogger.INFO);
+		continuousTreeService.persist(dto);
+		
+		logger.log("tree file successfully persisted.", ILogger.INFO);
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
 	@RequestMapping(path = "/tree", method = RequestMethod.DELETE)
 	public ResponseEntity<Void> deleteTree(@RequestParam(value = "treefile", required = true) String filename) {
+		
+		// delete the entity
+		continuousTreeService.delete(this.dto);
 		storageService.delete(filename);
+		
 		logger.log("tree file successfully deleted.", ILogger.INFO);
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
@@ -89,21 +81,30 @@ public class ContinuousTreeController {
 
 	@RequestMapping(value = { "/coordinates/y", "/coordinates/latitude" }, method = RequestMethod.POST)
 	public ResponseEntity<Void> setyCoordinates(@RequestParam(value = "attribute", required = true) String attribute) {
+		
 		dto.setyCoordinate(attribute);
+		continuousTreeService.update(dto);
+		
 		logger.log("y coordinate successfully set.", ILogger.INFO);
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
 	@RequestMapping(value = { "/coordinates/x", "/coordinates/longitude" }, method = RequestMethod.POST)
 	public ResponseEntity<Void> setxCoordinates(@RequestParam(value = "attribute", required = true) String attribute) {
+		
 		dto.setxCoordinate(attribute); 
+		continuousTreeService.update(dto);
+		
 		logger.log("x coordinate successfully set.", ILogger.INFO);
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
 	@RequestMapping(path = "/external-annotations", method = RequestMethod.POST)
 	public ResponseEntity<Void> setHasExternalAnnotations(@RequestParam(value = "has-external-annotations", required = true) Boolean hasExternalAnnotations) {
+		
 		dto.setHasExternalAnnotations(hasExternalAnnotations);   
+		continuousTreeService.update(dto);
+		
 		logger.log("external annotations parameter successfully set.", ILogger.INFO);
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
@@ -112,7 +113,10 @@ public class ContinuousTreeController {
 	public ResponseEntity<Object> setHpdLevel(@RequestParam(value = "hpd-level", required = true) Double hpdLevel) {
 		try {
 			checkInterval(hpdLevel, 0.0, 1.0);
+			
 			dto.setHpdLevel(hpdLevel);
+			continuousTreeService.update(dto);
+			
 			logger.log("hpd level parameter successfully set.", ILogger.INFO);
 			return new ResponseEntity<>(HttpStatus.OK);
 		} catch (ControllerException e) {
@@ -127,7 +131,10 @@ public class ContinuousTreeController {
 	public ResponseEntity<Object> setTimescaleMultiplier(@RequestParam(value = "timescale-multiplier", required = true) Double timescaleMultiplier) {
 		try {
 			checkInterval(timescaleMultiplier, Double.MIN_NORMAL, Double.MAX_VALUE);
+			
 			dto.setTimescaleMultiplier(timescaleMultiplier);
+			continuousTreeService.update(dto);
+			
 			logger.log("timescale multiplier parameter successfully set.", ILogger.INFO);
 			return new ResponseEntity<>(HttpStatus.OK);
 		} catch (ControllerException e) {
@@ -136,6 +143,26 @@ public class ContinuousTreeController {
 		            .status(HttpStatus.UNPROCESSABLE_ENTITY)
 		            .body(e.getMessage());
 		}
+	}
+	
+	@RequestMapping(path = "/geojson", method = RequestMethod.POST)
+	public ResponseEntity<Object> uploadGeojson(@RequestParam(value = "geojsonfile", required = true) MultipartFile file) throws IOException {
+		storageService.store(file);
+		dto.setGeojsonFilename(storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
+		continuousTreeService.update(dto);
+		logger.log("geojson file successfully uploaded.", ILogger.INFO);
+		
+		return new ResponseEntity<>(HttpStatus.OK);
+	}
+	
+	@RequestMapping(path = "/geojson", method = RequestMethod.DELETE)
+	public ResponseEntity<Object> deleteGeojson(@RequestParam(value = "geojsonfile", required = true) MultipartFile file) throws IOException {
+		storageService.store(file);
+		dto.setGeojsonFilename(storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
+		continuousTreeService.update(dto);
+		logger.log("geojson file successfully deleted.", ILogger.INFO);
+		
+		return new ResponseEntity<>(HttpStatus.OK);
 	}
 	
 	@RequestMapping(path = "/model", method = RequestMethod.GET, produces = "application/json")
