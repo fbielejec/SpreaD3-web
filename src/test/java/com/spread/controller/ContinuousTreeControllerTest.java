@@ -22,7 +22,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import com.spread.configuration.RepositoryConfiguration;
-import com.spread.controllers.ContinuousTreeController;
 import com.spread.utils.TestUtils;
 
 @RunWith(SpringJUnit4ClassRunner.class)
