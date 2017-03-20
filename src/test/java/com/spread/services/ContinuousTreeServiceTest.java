@@ -1,4 +1,4 @@
-package com.spread.controller.bean;
+package com.spread.services;
 
 public class ContinuousTreeServiceTest {
 

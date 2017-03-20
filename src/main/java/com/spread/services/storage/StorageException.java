@@ -1,4 +1,4 @@
-package com.spread.model.storage;
+package com.spread.services.storage;
 
 public class StorageException extends RuntimeException {
 	

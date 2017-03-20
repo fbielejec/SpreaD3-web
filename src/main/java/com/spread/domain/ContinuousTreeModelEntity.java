@@ -1,5 +1,6 @@
-package com.spread.model;
+package com.spread.domain;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -10,35 +11,34 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "continuous_tree_model")
-@NamedQueries(value = {
-		@NamedQuery(name = ContinuousTreeModelEntity.FIND_BY_ID, query = "from continuous_tree_model e where e.id=:id") })
-public class ContinuousTreeModelEntity implements LongID {
-
+//@NamedQueries(value = {
+//		@NamedQuery(name = ContinuousTreeModelEntity.FIND_BY_ID, query = "from TESTDB.PUBLIC.continuous_tree_model e where e.id=:id") })
+public class ContinuousTreeModelEntity {
+	
 	public static final String FIND_BY_ID = "ContinuousTreeModelEntity.byId";
 
-	private Long id;
-
-	private String treeFilename = null;
-	private String xCoordinate = null; // long
-	private String yCoordinate = null; // lat
-	private Double hpdLevel;
-	private String mrsd = "0/0/0";
-	private double timescaleMultiplier = 1.0;
-	private String outputFilename = "output.json";
-	private String geojsonFilename = null;
-	private boolean hasExternalAnnotations = false;
-
-	@Override
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	public Long getId() {
-		return id;
-	}
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Integer id;
 
-	@Override
-	public void setId(Long id) {
-		this.id = id;
-	}
+	@Column(length = 25)
+	private String treeFilename;
+	@Column(length = 25)
+	private String xCoordinate; // long
+	@Column(length = 25)
+	private String yCoordinate; // lat
+	@Column(length = 25)
+	private Double hpdLevel;
+	@Column(length = 25)
+	private String mrsd;
+	@Column(length = 25)
+	private double timescaleMultiplier; //1.0
+	@Column(length = 25)
+	private String outputFilename;// = "output.json";
+	@Column(length = 25)
+	private String geojsonFilename; 
+	@Column(length = 25)
+	private boolean hasExternalAnnotations; // false;
 
 	public String getxCoordinate() {
 		return xCoordinate;
@@ -112,9 +112,9 @@ public class ContinuousTreeModelEntity implements LongID {
 		this.treeFilename = treeFilename;
 	}
 
-	public ContinuousTreeModelDTO toDto() {
-		return new ContinuousTreeModelDTO(treeFilename, xCoordinate, yCoordinate, hpdLevel, mrsd, timescaleMultiplier,
-				outputFilename, geojsonFilename, hasExternalAnnotations);
-	}
+//	public ContinuousTreeModelDTO toDto() {
+//		return new ContinuousTreeModelDTO(treeFilename, xCoordinate, yCoordinate, hpdLevel, mrsd, timescaleMultiplier,
+//				outputFilename, geojsonFilename, hasExternalAnnotations);
+//	}
 
 }

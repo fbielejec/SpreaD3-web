@@ -1,4 +1,4 @@
-package com.spread.controller.loggers;
+package com.spread.loggers;
 
 import static javaslang.API.*;
 

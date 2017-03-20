@@ -1,4 +1,4 @@
-package com.spread.model.storage;
+package com.spread.services.storage;
 
 import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;

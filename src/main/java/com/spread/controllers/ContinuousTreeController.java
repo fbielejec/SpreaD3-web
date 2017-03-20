@@ -1,11 +1,9 @@
-package com.spread.controller;
+package com.spread.controllers;
 
 import java.io.IOException;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,15 +12,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.spread.controller.bean.IContinuousTreeService;
-import com.spread.controller.loggers.ILogger;
-import com.spread.controller.loggers.LoggerFactory;
-import com.spread.model.ContinuousTreeModelDTO;
-import com.spread.model.storage.StorageService;
-import com.spread.utils.Utils;
+import com.spread.loggers.ILogger;
+import com.spread.loggers.LoggerFactory;
+import com.spread.repositories.ContinuousTreeModelRepository;
+import com.spread.services.IContinuousTreeService;
+import com.spread.services.storage.StorageService;
 
 import jebl.evolution.io.ImportException;
-import jebl.evolution.trees.RootedTree;
 
 @RestController
 @RequestMapping("continuous")
@@ -30,7 +26,10 @@ public class ContinuousTreeController {
 
     private final ILogger logger;
 	private final StorageService storageService;
-	private ContinuousTreeModelDTO dto;
+	
+	@Autowired
+	private ContinuousTreeModelRepository continuousTreeModelDao;
+//	private ContinuousTreeModelDTO dto;
 
 	@Autowired
 	IContinuousTreeService continuousTreeService;
@@ -48,9 +47,11 @@ public class ContinuousTreeController {
 		storageService.store(file);
 		
 		// create and persist new entity
-		this.dto = new ContinuousTreeModelDTO();
-		dto.setTreeFilename(storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
-		continuousTreeService.persist(dto);
+//		this.dto = new ContinuousTreeModelDTO();
+//		dto.setTreeFilename(storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
+//		continuousTreeService.persist(dto);
+		
+//		continuousTreeModelDao.save(arg0)
 		
 		logger.log("tree file successfully persisted.", ILogger.INFO);
 		return new ResponseEntity<>(HttpStatus.OK);
@@ -60,7 +61,7 @@ public class ContinuousTreeController {
 	public ResponseEntity<Void> deleteTree(@RequestParam(value = "treefile", required = true) String filename) {
 		
 		// delete the entity
-		continuousTreeService.delete(this.dto);
+//		continuousTreeService.delete(this.dto);
 		storageService.delete(filename);
 		
 		logger.log("tree file successfully deleted.", ILogger.INFO);
@@ -70,20 +71,21 @@ public class ContinuousTreeController {
 	@RequestMapping(path = "/attributes", method = RequestMethod.GET, produces = "application/json")
 	public ResponseEntity<Set<String>> attributes() throws IOException, ImportException {
 
-		RootedTree tree = Utils.importRootedTree(dto.getTreeFilename());
-		Set<String> uniqueAttributes = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
-				.flatMap(node -> node.getAttributeNames().stream()).collect(Collectors.toSet());
+//		RootedTree tree = Utils.importRootedTree(dto.getTreeFilename());
+//		Set<String> uniqueAttributes = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
+//				.flatMap(node -> node.getAttributeNames().stream()).collect(Collectors.toSet());
 		
-		return ResponseEntity.ok()
-				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + dto.getTreeFilename() + "\"")
-				.body(uniqueAttributes);
+//		return ResponseEntity.ok()
+//				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + dto.getTreeFilename() + "\"")
+//				.body(uniqueAttributes);
+		return null;
 	}
 
 	@RequestMapping(value = { "/coordinates/y", "/coordinates/latitude" }, method = RequestMethod.POST)
 	public ResponseEntity<Void> setyCoordinates(@RequestParam(value = "attribute", required = true) String attribute) {
 		
-		dto.setyCoordinate(attribute);
-		continuousTreeService.update(dto);
+//		dto.setyCoordinate(attribute);
+//		continuousTreeService.update(dto);
 		
 		logger.log("y coordinate successfully set.", ILogger.INFO);
 		return new ResponseEntity<>(HttpStatus.OK);
@@ -92,8 +94,8 @@ public class ContinuousTreeController {
 	@RequestMapping(value = { "/coordinates/x", "/coordinates/longitude" }, method = RequestMethod.POST)
 	public ResponseEntity<Void> setxCoordinates(@RequestParam(value = "attribute", required = true) String attribute) {
 		
-		dto.setxCoordinate(attribute); 
-		continuousTreeService.update(dto);
+//		dto.setxCoordinate(attribute); 
+//		continuousTreeService.update(dto);
 		
 		logger.log("x coordinate successfully set.", ILogger.INFO);
 		return new ResponseEntity<>(HttpStatus.OK);
@@ -102,8 +104,8 @@ public class ContinuousTreeController {
 	@RequestMapping(path = "/external-annotations", method = RequestMethod.POST)
 	public ResponseEntity<Void> setHasExternalAnnotations(@RequestParam(value = "has-external-annotations", required = true) Boolean hasExternalAnnotations) {
 		
-		dto.setHasExternalAnnotations(hasExternalAnnotations);   
-		continuousTreeService.update(dto);
+//		dto.setHasExternalAnnotations(hasExternalAnnotations);   
+//		continuousTreeService.update(dto);
 		
 		logger.log("external annotations parameter successfully set.", ILogger.INFO);
 		return new ResponseEntity<>(HttpStatus.OK);
@@ -114,8 +116,8 @@ public class ContinuousTreeController {
 		try {
 			checkInterval(hpdLevel, 0.0, 1.0);
 			
-			dto.setHpdLevel(hpdLevel);
-			continuousTreeService.update(dto);
+//			dto.setHpdLevel(hpdLevel);
+//			continuousTreeService.update(dto);
 			
 			logger.log("hpd level parameter successfully set.", ILogger.INFO);
 			return new ResponseEntity<>(HttpStatus.OK);
@@ -132,8 +134,8 @@ public class ContinuousTreeController {
 		try {
 			checkInterval(timescaleMultiplier, Double.MIN_NORMAL, Double.MAX_VALUE);
 			
-			dto.setTimescaleMultiplier(timescaleMultiplier);
-			continuousTreeService.update(dto);
+//			dto.setTimescaleMultiplier(timescaleMultiplier);
+//			continuousTreeService.update(dto);
 			
 			logger.log("timescale multiplier parameter successfully set.", ILogger.INFO);
 			return new ResponseEntity<>(HttpStatus.OK);
@@ -148,8 +150,8 @@ public class ContinuousTreeController {
 	@RequestMapping(path = "/geojson", method = RequestMethod.POST)
 	public ResponseEntity<Object> uploadGeojson(@RequestParam(value = "geojsonfile", required = true) MultipartFile file) throws IOException {
 		storageService.store(file);
-		dto.setGeojsonFilename(storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
-		continuousTreeService.update(dto);
+//		dto.setGeojsonFilename(storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
+//		continuousTreeService.update(dto);
 		logger.log("geojson file successfully uploaded.", ILogger.INFO);
 		
 		return new ResponseEntity<>(HttpStatus.OK);
@@ -158,19 +160,19 @@ public class ContinuousTreeController {
 	@RequestMapping(path = "/geojson", method = RequestMethod.DELETE)
 	public ResponseEntity<Object> deleteGeojson(@RequestParam(value = "geojsonfile", required = true) MultipartFile file) throws IOException {
 		storageService.store(file);
-		dto.setGeojsonFilename(storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
-		continuousTreeService.update(dto);
+//		dto.setGeojsonFilename(storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
+//		continuousTreeService.update(dto);
 		logger.log("geojson file successfully deleted.", ILogger.INFO);
 		
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 	
-	@RequestMapping(path = "/model", method = RequestMethod.GET, produces = "application/json")
-	public ResponseEntity<ContinuousTreeModelDTO> getModel() throws IOException, ImportException {
-		return ResponseEntity.ok()
-				.header(new HttpHeaders().toString())
-				.body(dto);
-	}
+//	@RequestMapping(path = "/model", method = RequestMethod.GET, produces = "application/json")
+//	public ResponseEntity<ContinuousTreeModelDTO> getModel() throws IOException, ImportException {
+//		return ResponseEntity.ok()
+//				.header(new HttpHeaders().toString())
+//				.body(dto);
+//	}
 	
 	private void checkInterval(Double value, Double min, Double max) throws ControllerException {
 		if(value >= min && value <= max) {
