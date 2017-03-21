@@ -12,9 +12,6 @@ import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 
 import com.spread.domain.ContinuousTreeModelEntity;
 import com.spread.repositories.ContinuousTreeModelRepository;
-import com.spread.services.storage.FileSystemStorageService;
-import com.spread.services.storage.StorageProperties;
-import com.spread.services.storage.StorageService;
 
 @Configuration
 @EnableJpaRepositories(basePackageClasses = ContinuousTreeModelRepository.class)
@@ -49,10 +46,10 @@ public class RepositoryConfiguration {
 		return factory;
 	}
 
-	@Bean 
-	public StorageService continuousTreeService() {
-		return new FileSystemStorageService(new StorageProperties());
-	}
+//	@Bean 
+//	public StorageService continuousTreeService() {
+//		return new FileSystemStorageService(new StorageProperties());
+//	}
 	
 	
 	

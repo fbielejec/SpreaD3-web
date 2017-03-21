@@ -29,7 +29,6 @@ public class ContinuousTreeController {
 	
 	@Autowired
 	private ContinuousTreeModelRepository continuousTreeModelDao;
-//	private ContinuousTreeModelDTO dto;
 
 	@Autowired
 	IContinuousTreeService continuousTreeService;

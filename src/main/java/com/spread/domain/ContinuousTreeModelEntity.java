@@ -5,8 +5,6 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 @Entity
@@ -18,26 +16,27 @@ public class ContinuousTreeModelEntity {
 	public static final String FIND_BY_ID = "ContinuousTreeModelEntity.byId";
 
 	@Id
+	@Column
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-	@Column(length = 25)
+	@Column
 	private String treeFilename;
-	@Column(length = 25)
+	@Column
 	private String xCoordinate; // long
-	@Column(length = 25)
+	@Column
 	private String yCoordinate; // lat
-	@Column(length = 25)
+	@Column
 	private Double hpdLevel;
-	@Column(length = 25)
+	@Column
 	private String mrsd;
-	@Column(length = 25)
+	@Column
 	private double timescaleMultiplier; //1.0
-	@Column(length = 25)
+	@Column
 	private String outputFilename;// = "output.json";
-	@Column(length = 25)
+	@Column
 	private String geojsonFilename; 
-	@Column(length = 25)
+	@Column
 	private boolean hasExternalAnnotations; // false;
 
 	public String getxCoordinate() {
