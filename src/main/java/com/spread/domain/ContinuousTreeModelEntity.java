@@ -115,10 +115,4 @@ public class ContinuousTreeModelEntity {
 		this.treeFilename = treeFilename;
 	}
 
-	// public ContinuousTreeModelDTO toDto() {
-	// return new ContinuousTreeModelDTO(treeFilename, xCoordinate, yCoordinate,
-	// hpdLevel, mrsd, timescaleMultiplier,
-	// outputFilename, geojsonFilename, hasExternalAnnotations);
-	// }
-
 }

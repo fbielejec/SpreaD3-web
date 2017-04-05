@@ -15,8 +15,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.spread.domain.ContinuousTreeModelEntity;
+import com.spread.exceptions.SpreadException;
 import com.spread.loggers.ILogger;
 import com.spread.loggers.LoggerFactory;
+import com.spread.parsers.ContinuousTreeParser;
+import com.spread.parsers.TimeParser;
 import com.spread.repositories.ContinuousTreeModelRepository;
 import com.spread.services.storage.StorageService;
 import com.spread.utils.Utils;
@@ -130,7 +133,7 @@ public class ContinuousTreeController {
 
 			logger.log("hpd level parameter successfully set.", ILogger.INFO);
 			return new ResponseEntity<>(HttpStatus.OK);
-		} catch (ControllerException e) {
+		} catch (SpreadException e) {
 			logger.log(e.getMessage(), ILogger.ERROR);
 			return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
 		}
@@ -139,6 +142,7 @@ public class ContinuousTreeController {
 	@RequestMapping(path = "/timescale-multiplier", method = RequestMethod.POST)
 	public ResponseEntity<Object> setTimescaleMultiplier(
 			@RequestParam(value = "timescale-multiplier", required = true) Double timescaleMultiplier) {
+		
 		try {
 			checkInterval(timescaleMultiplier, Double.MIN_NORMAL, Double.MAX_VALUE);
 
@@ -148,7 +152,7 @@ public class ContinuousTreeController {
 
 			logger.log("timescale multiplier parameter successfully set.", ILogger.INFO);
 			return new ResponseEntity<>(HttpStatus.OK);
-		} catch (ControllerException e) {
+		} catch (SpreadException e) {
 			logger.log(e.getMessage(), ILogger.ERROR);
 			return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
 		}
@@ -185,6 +189,44 @@ public class ContinuousTreeController {
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
+	// TODO
+	@RequestMapping(path = "/output", method = RequestMethod.GET, produces = "application/json")
+	public ResponseEntity<Object> getOutput() {
+
+		try {
+			
+			ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
+
+			RootedTree rootedTree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
+			TimeParser timeParser = new TimeParser(continuousTreeModel.getMrsd());
+
+			logger.log("Parsed time line", ILogger.INFO);
+			
+			ContinuousTreeParser treeParser = new ContinuousTreeParser(rootedTree, //
+					continuousTreeModel.getxCoordinate(), //
+					continuousTreeModel.getyCoordinate(), //
+					continuousTreeModel.hasExternalAnnotations(), //
+					continuousTreeModel.getHpdLevel().toString(), //
+					timeParser, //
+					continuousTreeModel.getTimescaleMultiplier());
+
+			treeParser.parseTree();
+
+			return null;
+
+		} catch (IOException e) {
+			logger.log(e.getMessage(), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+		} catch (ImportException e) {
+			logger.log(e.getMessage(), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+		} catch (SpreadException e) {
+			logger.log(e.getMessage(), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+		}
+
+	}	
+	
 	@RequestMapping(path = "/model", method = RequestMethod.GET, produces = "application/json")
 	public ResponseEntity<ContinuousTreeModelEntity> getModel() throws IOException, ImportException {
 
@@ -193,11 +235,11 @@ public class ContinuousTreeController {
 		return ResponseEntity.ok().header(new HttpHeaders().toString()).body(continuousTreeModel);
 	}
 
-	private void checkInterval(Double value, Double min, Double max) throws ControllerException {
+	private void checkInterval(Double value, Double min, Double max) throws SpreadException {
 		if (value >= min && value <= max) {
 			return;
 		} else {
-			throw new ControllerException("value is outside of permitted interval [" + min + "," + max + "]");
+			throw new SpreadException("value is outside of permitted interval [" + min + "," + max + "]");
 		}
 	}
 

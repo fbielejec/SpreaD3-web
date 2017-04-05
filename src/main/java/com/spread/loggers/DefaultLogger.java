@@ -13,6 +13,7 @@ public class DefaultLogger implements ILogger {
 	public void log(String message, Integer level) {
 		Match(level).of(Case($(INFO), run(() -> logger.info(message))), //
 				Case($(DEBUG), run(() -> logger.debug(message))), //
+				Case($(WARNING), run(() -> logger.warn(message))), //
 				Case($(ERROR), run(() -> logger.error(message))), //
 				Case($(), run(() -> logger.info(message))));
 	}
