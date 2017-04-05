@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+	<!-- TODO: initial values -->
+
+	<changeSet id="create_continuous_tree_table" author="fbielejec">
+		<createTable tableName="continuous_tree_model">
+
+			<column name="id" autoIncrement="true" type="BIGINT">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+
+			<column name="tree_filename" type="VARCHAR(100)">
+			</column>
+
+			<!-- meta: longitude -->
+			<column name="x_coordinate" type="VARCHAR(50)">
+			</column>
+
+			<!-- meta: latitude -->
+			<column name="y_coordinate" type="VARCHAR(50)">
+			</column>
+
+			<column name="hpd_level" type="FLOAT">
+			</column>
+
+			<column name="mrsd" type="VARCHAR(20)">
+			</column>
+
+			<column name="timescale_multiplier" type="FLOAT">
+			</column>
+
+			<column name="geojson_filename" type="VARCHAR(100)">
+			</column>
+
+			<column name="has_external_annotations" type="BOOLEAN">
+			</column>
+
+			<column name="output_filename" type="VARCHAR(100)">
+			</column>
+
+		</createTable>
+	</changeSet>
+</databaseChangeLog>

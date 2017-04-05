@@ -1,4 +1,4 @@
-package com.spread.model.storage;
+package com.spread.services.storage;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

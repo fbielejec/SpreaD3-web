@@ -1,4 +1,4 @@
-package com.spread.model.storage;
+package com.spread.services.storage;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;

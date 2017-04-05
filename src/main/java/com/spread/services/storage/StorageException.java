@@ -1,8 +1,10 @@
-package com.spread.model.storage;
+package com.spread.services.storage;
 
 public class StorageException extends RuntimeException {
+	
+ 	private static final long serialVersionUID = -5672539256429927073L;
 
-    public StorageException(String message) {
+	public StorageException(String message) {
         super(message);
     }
 

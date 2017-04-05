@@ -1,16 +1,47 @@
-package com.spread.model;
+package com.spread.domain;
 
-public class ContinuousTreeModelDTO {
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
-	public String treeFilename = null;
-	public String xCoordinate = null; // long
-	public String yCoordinate = null; // lat
-	public Double hpdLevel;
-	public String mrsd = "0/0/0";
-	public double timescaleMultiplier = 1.0;
-	public String outputFilename = "output.json";
-	public String geojsonFilename = null;
-	public boolean hasExternalAnnotations = false;
+@Entity
+@Table(name = "continuous_tree_model")
+public class ContinuousTreeModelEntity {
+
+	@Id
+	@Column
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	private Integer id;
+
+	@Column(name = "tree_filename", nullable = false)
+	private String treeFilename;
+
+	@Column
+	private String xCoordinate; // long
+
+	@Column
+	private String yCoordinate; // lat
+
+	@Column
+	private Double hpdLevel;
+
+	@Column
+	private String mrsd;
+
+	@Column
+	private double timescaleMultiplier; // 1.0
+
+	@Column
+	private String outputFilename;// = "output.json";
+
+	@Column(name = "geojson_filename", nullable = true)
+	private String geojsonFilename;
+
+	@Column
+	private boolean hasExternalAnnotations; // false;
 
 	public String getxCoordinate() {
 		return xCoordinate;
@@ -83,5 +114,11 @@ public class ContinuousTreeModelDTO {
 	public void setTreeFilename(String treeFilename) {
 		this.treeFilename = treeFilename;
 	}
+
+	// public ContinuousTreeModelDTO toDto() {
+	// return new ContinuousTreeModelDTO(treeFilename, xCoordinate, yCoordinate,
+	// hpdLevel, mrsd, timescaleMultiplier,
+	// outputFilename, geojsonFilename, hasExternalAnnotations);
+	// }
 
 }

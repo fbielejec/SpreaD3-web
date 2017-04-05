@@ -5,7 +5,7 @@
 
 *Spatial Phylogenetic Reconstruction of Evolutionary Dynamics - web service* <br />
 Version: 0.0.1, 2017 <br />
-Authors: Filip Bielejec, Guy Baele, Andrew Rambaut, Marc A. Suchard & Philippe 'The Wise' Lemey <br />
+Author: Filip Bielejec <br />
 
 ## PURPOSE
 REST Web Services to SpreaD3, capable of generating links with on-line visualisations.
@@ -23,14 +23,16 @@ REST Web Services to SpreaD3, capable of generating links with on-line visualisa
    "GNU Lesser General Public License": http://www.gnu.org/licenses/lgpl.html for more details.
 
 
-## CONTRIBUTING
-Very much welcomed. Contact for details.
+ 
+## Test
 
+mvn test
+ 
 ## Dev
 
 mvn spring-boot:run
-
-## Demo
+ 
+## Production
 
 mvn clean package && java -jar target/spread3-web-0.0.1.jar
 
