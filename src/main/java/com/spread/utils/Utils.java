@@ -43,24 +43,30 @@ public class Utils {
 	public static final int X_INDEX = 0;
 	public static final int Y_INDEX = 1;
 	public static final String NEGATIVE_SIGN = "-";
-	
+
+	public static String splitString(String string, String c) {
+		String[] id = string.split(c);
+		return id[id.length - 1];
+	}// END: splitString
+
 	public static RootedTree importRootedTree(String tree) throws IOException, ImportException {
 		TreeImporter importer = new NexusImporter(new FileReader(tree));
 		RootedTree rootedTree = (RootedTree) importer.importNextTree();
 		return rootedTree;
-	} 
+	}
 
 	public static Double getNodeHeight(RootedTree tree, Node node) throws SpreadException {
 
 		Double nodeHeight = tree.getHeight(node);
 
-//		if (nodeHeight == null) {
-//			throw new AnalysisException("Height attribute missing from the node. \n");
-//		}
+		// if (nodeHeight == null) {
+		// throw new AnalysisException("Height attribute missing from the node.
+		// \n");
+		// }
 
 		return nodeHeight;
 	}// END: getHeight
-	
+
 	public static Object getObjectNodeAttribute(Node node, String attributeName) throws SpreadException {
 
 		Object nodeAttribute = node.getAttribute(attributeName);
@@ -71,7 +77,7 @@ public class Utils {
 
 		return nodeAttribute;
 	}// END: getObjectNodeAttribute
-	
+
 	public static Object[] getObjectArrayNodeAttribute(Node node, String attributeName) throws SpreadException {
 
 		Object[] nodeAttributeArray = (Object[]) node.getAttribute(attributeName);
@@ -82,9 +88,9 @@ public class Utils {
 
 		return nodeAttributeArray;
 	}// END: getObjectArrayNodeAttribute
-	
+
 	public static double round(double value, double precision) {
 		return (double) Math.round(value * precision) / precision;
-	}//END: round
-	
+	}// END: round
+
 }

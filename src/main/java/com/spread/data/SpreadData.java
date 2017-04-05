@@ -5,7 +5,6 @@ import java.util.List;
 
 /**
  * @author Filip Bielejec
- * @version $Id$
  */
 public class SpreadData {
 
@@ -18,36 +17,13 @@ public class SpreadData {
 	private final LinkedList<Location> locations;
 	private final LinkedList<Layer> layers;
 
-//	public SpreadData(TimeLine timeLine, //
-//			AxisAttributes axisAttributes,
-//			LinkedList<Attribute> mapAttributes, //
-//			LinkedList<Attribute> lineAttributes, //
-//			LinkedList<Attribute> pointAttributes, //
-//			LinkedList<Location> locations, //
-//			LinkedList<Layer> layers //
-//	) {
-//
-//		this.timeLine = timeLine;
-//		this.axisAttributes = axisAttributes;
-//		this.mapAttributes = mapAttributes;
-//		this.lineAttributes = lineAttributes;
-//		this.pointAttributes = pointAttributes;
-//		this.areaAttributes = null;
-//		this.locations = locations;
-//		this.layers = layers;
-//
-//		
-//	}// END: Constructor
-
 	public SpreadData(TimeLine timeLine, //
-			AxisAttributes axisAttributes,
-			LinkedList<Attribute> mapAttributes, //
+			AxisAttributes axisAttributes, LinkedList<Attribute> mapAttributes, //
 			LinkedList<Attribute> lineAttributes, //
 			LinkedList<Attribute> pointAttributes, //
 			LinkedList<Attribute> areaAttributes, //
 			LinkedList<Location> locations, //
-			LinkedList<Layer> layers //
-	) {
+			LinkedList<Layer> layers) {
 
 		this.timeLine = timeLine;
 		this.axisAttributes = axisAttributes;
@@ -60,8 +36,6 @@ public class SpreadData {
 
 	}// END: Constructor
 
-	
-	
 	public List<Layer> getLayers() {
 		return layers;
 	}
@@ -73,7 +47,7 @@ public class SpreadData {
 	public boolean hasLocations() {
 		return locations != null ? true : false;
 	}
-	
+
 	public LinkedList<Location> getLocations() {
 		return locations;
 	}
@@ -98,4 +72,4 @@ public class SpreadData {
 		return areaAttributes;
 	}
 
-}// END: class
+}

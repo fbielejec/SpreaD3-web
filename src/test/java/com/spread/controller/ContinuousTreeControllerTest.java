@@ -1,6 +1,7 @@
 package com.spread.controller;
 
 import static org.junit.Assert.assertEquals;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -9,7 +10,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -131,6 +134,19 @@ public class ContinuousTreeControllerTest {
 
 		mockMvc.perform(MockMvcRequestBuilders.fileUpload("/continuous/geojson")
 				.file(new MockMultipartFile(name, originalFileName, contentType, content))).andExpect(status().isOk());
+	}
+
+	// TODO : must run last
+	@Ignore
+	@Test
+	public void continuousTreeParserTest() throws Exception {
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/spreadData")) //
+				.andDo(print()) //
+				.andExpect(status().isOk());
+		// .andExpect(content().string(TestUtils.attributes))
+		;
+
 	}
 
 }
