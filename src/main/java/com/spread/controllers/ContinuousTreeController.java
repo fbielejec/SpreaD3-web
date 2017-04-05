@@ -2,8 +2,10 @@ package com.spread.controllers;
 
 import java.io.IOException;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,16 +14,18 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.spread.domain.ContinuousTreeModelEntity;
 import com.spread.loggers.ILogger;
 import com.spread.loggers.LoggerFactory;
 import com.spread.repositories.ContinuousTreeModelRepository;
-import com.spread.services.IContinuousTreeService;
 import com.spread.services.storage.StorageService;
+import com.spread.utils.Utils;
 
 import jebl.evolution.io.ImportException;
+import jebl.evolution.trees.RootedTree;
 
 @RestController
-@RequestMapping("continuous")
+@RequestMapping("/continuous")
 public class ContinuousTreeController {
 
     private final ILogger logger;
@@ -29,9 +33,6 @@ public class ContinuousTreeController {
 	
 	@Autowired
 	private ContinuousTreeModelRepository continuousTreeModelDao;
-
-	@Autowired
-	IContinuousTreeService continuousTreeService;
     
 	public ContinuousTreeController(StorageService storageService) {
 		this.logger = new LoggerFactory().getLogger(LoggerFactory.DEFAULT);
@@ -45,23 +46,23 @@ public class ContinuousTreeController {
 		// store the file
 		storageService.store(file);
 		
-		// create and persist new entity
-//		this.dto = new ContinuousTreeModelDTO();
-//		dto.setTreeFilename(storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
-//		continuousTreeService.persist(dto);
-		
-//		continuousTreeModelDao.save(arg0)
+		ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity();
+		continuousTreeModel.setTreeFilename(storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
+		continuousTreeModelDao.save(continuousTreeModel);
 		
 		logger.log("tree file successfully persisted.", ILogger.INFO);
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
+	// TODO : test
 	@RequestMapping(path = "/tree", method = RequestMethod.DELETE)
 	public ResponseEntity<Void> deleteTree(@RequestParam(value = "treefile", required = true) String filename) {
 		
 		// delete the entity
-//		continuousTreeService.delete(this.dto);
 		storageService.delete(filename);
+
+		ContinuousTreeModelEntity continuousTreeModel = continuousTreeModelDao.findAll().get(0);
+		continuousTreeModelDao.delete(continuousTreeModel);
 		
 		logger.log("tree file successfully deleted.", ILogger.INFO);
 		return new ResponseEntity<>(HttpStatus.OK);
@@ -70,16 +71,23 @@ public class ContinuousTreeController {
 	@RequestMapping(path = "/attributes", method = RequestMethod.GET, produces = "application/json")
 	public ResponseEntity<Set<String>> attributes() throws IOException, ImportException {
 
-//		RootedTree tree = Utils.importRootedTree(dto.getTreeFilename());
-//		Set<String> uniqueAttributes = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
-//				.flatMap(node -> node.getAttributeNames().stream()).collect(Collectors.toSet());
+		ContinuousTreeModelEntity continuousTreeModel = continuousTreeModelDao.findAll().get(0);
 		
-//		return ResponseEntity.ok()
-//				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + dto.getTreeFilename() + "\"")
-//				.body(uniqueAttributes);
-		return null;
+		RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
+		Set<String> uniqueAttributes = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
+				.flatMap(node -> node.getAttributeNames().stream()).collect(Collectors.toSet());
+		
+		return ResponseEntity.ok()
+				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + continuousTreeModel.getTreeFilename() + "\"")
+				.body(uniqueAttributes);
 	}
 
+	
+	
+	
+	
+	
+	
 	@RequestMapping(value = { "/coordinates/y", "/coordinates/latitude" }, method = RequestMethod.POST)
 	public ResponseEntity<Void> setyCoordinates(@RequestParam(value = "attribute", required = true) String attribute) {
 		

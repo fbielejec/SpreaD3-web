@@ -8,19 +8,15 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "continuous_tree_model")
-//@NamedQueries(value = {
-//		@NamedQuery(name = ContinuousTreeModelEntity.FIND_BY_ID, query = "from TESTDB.PUBLIC.continuous_tree_model e where e.id=:id") })
+//@Table(name = "continuous_tree_model")
 public class ContinuousTreeModelEntity {
 	
-	public static final String FIND_BY_ID = "ContinuousTreeModelEntity.byId";
-
 	@Id
 	@Column
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-	@Column
+	@Column(name="tree_filename")
 	private String treeFilename;
 	@Column
 	private String xCoordinate; // long
