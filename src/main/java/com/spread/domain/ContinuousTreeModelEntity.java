@@ -8,30 +8,38 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-//@Table(name = "continuous_tree_model")
+@Table(name = "continuous_tree_model")
 public class ContinuousTreeModelEntity {
-	
+
 	@Id
 	@Column
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Integer id;
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	private Integer id;
 
-	@Column(name="tree_filename")
+	@Column(name = "tree_filename", nullable = false)
 	private String treeFilename;
+
 	@Column
 	private String xCoordinate; // long
+
 	@Column
 	private String yCoordinate; // lat
+
 	@Column
 	private Double hpdLevel;
+
 	@Column
 	private String mrsd;
+
 	@Column
-	private double timescaleMultiplier; //1.0
+	private double timescaleMultiplier; // 1.0
+
 	@Column
 	private String outputFilename;// = "output.json";
-	@Column
-	private String geojsonFilename; 
+
+	@Column(name = "geojson_filename", nullable = true)
+	private String geojsonFilename;
+
 	@Column
 	private boolean hasExternalAnnotations; // false;
 
@@ -107,9 +115,10 @@ public class ContinuousTreeModelEntity {
 		this.treeFilename = treeFilename;
 	}
 
-//	public ContinuousTreeModelDTO toDto() {
-//		return new ContinuousTreeModelDTO(treeFilename, xCoordinate, yCoordinate, hpdLevel, mrsd, timescaleMultiplier,
-//				outputFilename, geojsonFilename, hasExternalAnnotations);
-//	}
+	// public ContinuousTreeModelDTO toDto() {
+	// return new ContinuousTreeModelDTO(treeFilename, xCoordinate, yCoordinate,
+	// hpdLevel, mrsd, timescaleMultiplier,
+	// outputFilename, geojsonFilename, hasExternalAnnotations);
+	// }
 
 }

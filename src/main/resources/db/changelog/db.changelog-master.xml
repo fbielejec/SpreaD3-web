@@ -5,7 +5,7 @@
   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
  
-  <include file="/db/changelog/db.initial-structure.xml"/> 
+<!--   <include file="/db/changelog/db.initial-structure.xml"/>  -->
   
   <!--  put lines like this in order.
    <include file="upgrade/1.0/B-123456/db.changelog.xml"/>
