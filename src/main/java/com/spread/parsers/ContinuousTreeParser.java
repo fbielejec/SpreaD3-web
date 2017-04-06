@@ -48,7 +48,8 @@ public class ContinuousTreeParser {
 			String xCoordinateAttributeName, //
 			String yCoordinateAttributeName, //
 			boolean externalAnnotations, //
-			String hpd, TimeParser timeParser, //
+			String hpd, //
+			TimeParser timeParser, //
 			double timescaleMultiplier) {
 
 		this.logger = new LoggerFactory().getLogger(LoggerFactory.DEFAULT);
@@ -117,7 +118,7 @@ public class ContinuousTreeParser {
 							+ " child node. Resulting visualisation may be incomplete!";
 
 					logger.log(message, ILogger.WARNING);
-					
+
 					continue;
 				} // END: try-catch
 
@@ -137,7 +138,7 @@ public class ContinuousTreeParser {
 
 				// parent node parsed second
 
-				// TODO : this spills to the root node, resulting in exception
+				// this spills to the root node, resulting in exception
 				// if not anotated
 				// root node will be annotated with locations but not with e.g.
 				// rate (facepalm)
@@ -165,7 +166,7 @@ public class ContinuousTreeParser {
 					String message = coordinateName + " attribute was found on the " + nodeType
 							+ " child node but could not be found on the " + nodeType
 							+ " parent node. Resulting visualisation may be incomplete!";
-					
+
 					logger.log(message, ILogger.WARNING);
 					continue;
 				} // END: try-catch
@@ -220,7 +221,7 @@ public class ContinuousTreeParser {
 
 						String message = modalityAttributeName + " attribute could not be found on the " + nodeType
 								+ " node. Resulting visualisation may be incomplete!";
-						
+
 						logger.log(message, ILogger.WARNING);
 						continue;
 					}
@@ -290,7 +291,7 @@ public class ContinuousTreeParser {
 			} else {
 
 				logger.log("At the root node", ILogger.INFO);
-				
+
 				Double rootCoordinateX = null;
 				Double rootCoordinateY = null;
 				int tryingCoordinate = 0;

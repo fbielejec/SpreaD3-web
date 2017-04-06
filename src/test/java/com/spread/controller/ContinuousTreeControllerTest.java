@@ -10,9 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,9 +65,18 @@ public class ContinuousTreeControllerTest {
 
 	}
 
-	@Test
-	public void firstTest() {
-		assertEquals(0, 0);
+	private void uploadGeoJson() throws Exception {
+		String filename = "geojson/subregion_Australia_and_New_Zealand_subunits.geojson";
+		File geojsonfile = new File(getClass().getClassLoader().getResource(filename).getFile());
+
+		Path path = Paths.get(geojsonfile.getAbsolutePath());
+		String name = "geojsonfile";
+		String originalFileName = geojsonfile.getName();
+		String contentType = "text/plain";
+		byte[] content = Files.readAllBytes(path);
+
+		mockMvc.perform(MockMvcRequestBuilders.fileUpload("/continuous/geojson")
+				.file(new MockMultipartFile(name, originalFileName, contentType, content))).andExpect(status().isOk());
 	}
 
 	@Test
@@ -122,30 +129,42 @@ public class ContinuousTreeControllerTest {
 	}
 
 	@Test
-	public void geojsonTest() throws Exception {
-		String filename = "geojson/subregion_Australia_and_New_Zealand_subunits.geojson";
-		File geojsonfile = new File(getClass().getClassLoader().getResource(filename).getFile());
-
-		Path path = Paths.get(geojsonfile.getAbsolutePath());
-		String name = "geojsonfile";
-		String originalFileName = geojsonfile.getName();
-		String contentType = "text/plain";
-		byte[] content = Files.readAllBytes(path);
-
-		mockMvc.perform(MockMvcRequestBuilders.fileUpload("/continuous/geojson")
-				.file(new MockMultipartFile(name, originalFileName, contentType, content))).andExpect(status().isOk());
+	public void mrsdTest() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/mrsd").param("mrsd", "2017-04-06"))
+				.andExpect(status().isOk());
 	}
-
-	// TODO : must run last
-	@Ignore
+ 
 	@Test
 	public void continuousTreeParserTest() throws Exception {
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/spreadData")) //
+		mockMvc.perform(
+				MockMvcRequestBuilders.post("/continuous/coordinates/y").param("attribute", TestUtils.yCoordinate))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(
+				MockMvcRequestBuilders.post("/continuous/coordinates/x").param("attribute", TestUtils.xCoordinate))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/external-annotations")
+				.param("has-external-annotations", "true")).andExpect(status().isOk());
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/hpd-level").param("hpd-level", "0.95"))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(
+				MockMvcRequestBuilders.post("/continuous/timescale-multiplier").param("timescale-multiplier", "1.0"))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(
+				MockMvcRequestBuilders.post("/continuous/mrsd").param("mrsd", "2017/04/06"))
+				.andExpect(status().isOk());
+		
+		uploadGeoJson();
+
+		// TODO: assertion
+		mockMvc.perform(MockMvcRequestBuilders.get("/continuous/output")) //
 				.andDo(print()) //
 				.andExpect(status().isOk());
-		// .andExpect(content().string(TestUtils.attributes))
-		;
 
 	}
 

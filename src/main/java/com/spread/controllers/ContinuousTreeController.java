@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.google.gson.GsonBuilder;
 import com.spread.data.Attribute;
 import com.spread.data.AxisAttributes;
 import com.spread.data.Layer;
@@ -32,6 +33,7 @@ import com.spread.parsers.ContinuousTreeParser;
 import com.spread.parsers.GeoJSONParser;
 import com.spread.parsers.TimeParser;
 import com.spread.repositories.ContinuousTreeModelRepository;
+import com.spread.services.storage.StorageException;
 import com.spread.services.storage.StorageService;
 import com.spread.utils.Utils;
 
@@ -54,19 +56,27 @@ public class ContinuousTreeController {
 	}
 
 	@RequestMapping(path = "/tree", method = RequestMethod.POST)
-	public ResponseEntity<Void> uploadTree(@RequestParam(value = "treefile", required = true) MultipartFile file)
-			throws IOException {
+	public ResponseEntity<Object> uploadTree(@RequestParam(value = "treefile", required = true) MultipartFile file) {
+		try {
 
-		// store the file
-		storageService.store(file);
+			// store the file
+			storageService.store(file);
 
-		ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity();
-		continuousTreeModel
-				.setTreeFilename(storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
-		repository.save(continuousTreeModel);
+			ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity();
+			continuousTreeModel.setTreeFilename(
+					storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
+			repository.save(continuousTreeModel);
 
-		logger.log("tree file successfully persisted.", ILogger.INFO);
-		return new ResponseEntity<>(HttpStatus.OK);
+			logger.log("tree file successfully persisted.", ILogger.INFO);
+			return new ResponseEntity<>(HttpStatus.OK);
+
+		} catch (IOException e) {
+			logger.log(e.getMessage(), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+		} catch (StorageException e) {
+			logger.log(e.getMessage(), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+		}
 	}
 
 	@RequestMapping(path = "/tree", method = RequestMethod.DELETE)
@@ -150,6 +160,24 @@ public class ContinuousTreeController {
 		}
 	}
 
+	@RequestMapping(path = "/mrsd", method = RequestMethod.POST)
+	public ResponseEntity<Object> setMrsd(@RequestParam(value = "mrsd") String mrsd) {
+		try {
+
+			checkIsDate(mrsd);
+
+			ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
+			continuousTreeModel.setMrsd(mrsd);
+			repository.save(continuousTreeModel);
+
+			logger.log("Mrsd parameter successfully set.", ILogger.INFO);
+			return new ResponseEntity<>(HttpStatus.OK);
+		} catch (SpreadException e) {
+			logger.log(e.getMessage(), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
+		}
+	}
+
 	@RequestMapping(path = "/timescale-multiplier", method = RequestMethod.POST)
 	public ResponseEntity<Object> setTimescaleMultiplier(
 			@RequestParam(value = "timescale-multiplier", required = true) Double timescaleMultiplier) {
@@ -200,7 +228,7 @@ public class ContinuousTreeController {
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
-	@RequestMapping(path = "/spreadData", method = RequestMethod.GET, produces = "application/json")
+	@RequestMapping(path = "/output", method = RequestMethod.GET, produces = "application/json")
 	public ResponseEntity<Object> getOutput() {
 
 		try {
@@ -286,7 +314,9 @@ public class ContinuousTreeController {
 					areaAttributes, null, // locations
 					layersList);
 
-			return ResponseEntity.ok().header(new HttpHeaders().toString()).body(spreadData);
+			String json = new GsonBuilder().create().toJson(spreadData);
+
+			return ResponseEntity.ok().header(new HttpHeaders().toString()).body(json);
 		} catch (IOException e) {
 			logger.log(e.getMessage(), ILogger.ERROR);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
@@ -314,6 +344,11 @@ public class ContinuousTreeController {
 		} else {
 			throw new SpreadException("value is outside of permitted interval [" + min + "," + max + "]");
 		}
+	}
+
+	// TODO: spec it
+	private void checkIsDate(String date) throws SpreadException {
+		return;
 	}
 
 }
