@@ -1,6 +1,7 @@
 package com.spread.controllers;
 
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -14,10 +15,25 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.google.gson.GsonBuilder;
+import com.spread.data.Attribute;
+import com.spread.data.AxisAttributes;
+import com.spread.data.Layer;
+import com.spread.data.SpreadData;
+import com.spread.data.TimeLine;
+import com.spread.data.attributable.Area;
+import com.spread.data.attributable.Line;
+import com.spread.data.attributable.Point;
+import com.spread.data.geojson.GeoJsonData;
 import com.spread.domain.ContinuousTreeModelEntity;
+import com.spread.exceptions.SpreadException;
 import com.spread.loggers.ILogger;
 import com.spread.loggers.LoggerFactory;
+import com.spread.parsers.ContinuousTreeParser;
+import com.spread.parsers.GeoJSONParser;
+import com.spread.parsers.TimeParser;
 import com.spread.repositories.ContinuousTreeModelRepository;
+import com.spread.services.storage.StorageException;
 import com.spread.services.storage.StorageService;
 import com.spread.utils.Utils;
 
@@ -40,19 +56,27 @@ public class ContinuousTreeController {
 	}
 
 	@RequestMapping(path = "/tree", method = RequestMethod.POST)
-	public ResponseEntity<Void> uploadTree(@RequestParam(value = "treefile", required = true) MultipartFile file)
-			throws IOException {
+	public ResponseEntity<Object> uploadTree(@RequestParam(value = "treefile", required = true) MultipartFile file) {
+		try {
 
-		// store the file
-		storageService.store(file);
+			// store the file
+			storageService.store(file);
 
-		ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity();
-		continuousTreeModel
-				.setTreeFilename(storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
-		repository.save(continuousTreeModel);
+			ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity();
+			continuousTreeModel.setTreeFilename(
+					storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
+			repository.save(continuousTreeModel);
 
-		logger.log("tree file successfully persisted.", ILogger.INFO);
-		return new ResponseEntity<>(HttpStatus.OK);
+			logger.log("tree file successfully persisted.", ILogger.INFO);
+			return new ResponseEntity<>(HttpStatus.OK);
+
+		} catch (IOException e) {
+			logger.log(e.getMessage(), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+		} catch (StorageException e) {
+			logger.log(e.getMessage(), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+		}
 	}
 
 	@RequestMapping(path = "/tree", method = RequestMethod.DELETE)
@@ -130,7 +154,25 @@ public class ContinuousTreeController {
 
 			logger.log("hpd level parameter successfully set.", ILogger.INFO);
 			return new ResponseEntity<>(HttpStatus.OK);
-		} catch (ControllerException e) {
+		} catch (SpreadException e) {
+			logger.log(e.getMessage(), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
+		}
+	}
+
+	@RequestMapping(path = "/mrsd", method = RequestMethod.POST)
+	public ResponseEntity<Object> setMrsd(@RequestParam(value = "mrsd") String mrsd) {
+		try {
+
+			checkIsDate(mrsd);
+
+			ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
+			continuousTreeModel.setMrsd(mrsd);
+			repository.save(continuousTreeModel);
+
+			logger.log("Mrsd parameter successfully set.", ILogger.INFO);
+			return new ResponseEntity<>(HttpStatus.OK);
+		} catch (SpreadException e) {
 			logger.log(e.getMessage(), ILogger.ERROR);
 			return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
 		}
@@ -139,6 +181,7 @@ public class ContinuousTreeController {
 	@RequestMapping(path = "/timescale-multiplier", method = RequestMethod.POST)
 	public ResponseEntity<Object> setTimescaleMultiplier(
 			@RequestParam(value = "timescale-multiplier", required = true) Double timescaleMultiplier) {
+
 		try {
 			checkInterval(timescaleMultiplier, Double.MIN_NORMAL, Double.MAX_VALUE);
 
@@ -148,7 +191,7 @@ public class ContinuousTreeController {
 
 			logger.log("timescale multiplier parameter successfully set.", ILogger.INFO);
 			return new ResponseEntity<>(HttpStatus.OK);
-		} catch (ControllerException e) {
+		} catch (SpreadException e) {
 			logger.log(e.getMessage(), ILogger.ERROR);
 			return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
 		}
@@ -185,6 +228,108 @@ public class ContinuousTreeController {
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
+	@RequestMapping(path = "/output", method = RequestMethod.GET, produces = "application/json")
+	public ResponseEntity<Object> getOutput() {
+
+		try {
+
+			ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
+
+			TimeLine timeLine = null;
+			LinkedList<Attribute> mapAttributes = null;
+			LinkedList<Attribute> lineAttributes = null;
+			LinkedList<Attribute> pointAttributes = null;
+			LinkedList<Attribute> areaAttributes = null;
+			LinkedList<Layer> layersList = new LinkedList<Layer>();
+
+			// ---IMPORT---//
+
+			RootedTree rootedTree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
+			TimeParser timeParser = new TimeParser(continuousTreeModel.getMrsd());
+
+			timeLine = timeParser.getTimeLine(rootedTree.getHeight(rootedTree.getRootNode()));
+
+			logger.log("Parsed time line", ILogger.INFO);
+
+			ContinuousTreeParser treeParser = new ContinuousTreeParser(rootedTree, //
+					continuousTreeModel.getxCoordinate(), //
+					continuousTreeModel.getyCoordinate(), //
+					continuousTreeModel.hasExternalAnnotations(), //
+					continuousTreeModel.getHpdLevel().toString(), //
+					timeParser, //
+					continuousTreeModel.getTimescaleMultiplier());
+
+			treeParser.parseTree();
+
+			logger.log("Parsed the tree", ILogger.INFO);
+
+			lineAttributes = treeParser.getLineAttributes();
+			pointAttributes = treeParser.getPointAttributes();
+			areaAttributes = treeParser.getAreaAttributes();
+
+			logger.log("Parsed tree attributes", ILogger.INFO);
+
+			// ---GEOJSON LAYER---//
+
+			if (continuousTreeModel.getGeojsonFilename() != null) {
+
+				GeoJSONParser geojsonParser = new GeoJSONParser(continuousTreeModel.getGeojsonFilename());
+				GeoJsonData geojson = geojsonParser.parseGeoJSON();
+
+				mapAttributes = geojsonParser.getUniqueMapAttributes();
+
+				String geojsonLayerId = Utils.splitString(continuousTreeModel.getGeojsonFilename(), "/");
+				Layer geojsonLayer = new Layer(geojsonLayerId, //
+						"GeoJson layer", //
+						geojson);
+
+				layersList.add(geojsonLayer);
+
+				System.out.println("Parsed map attributes");
+
+			} // END: null check
+
+			// ---DATA LAYER (TREE LINES & POINTS, AREAS)---//
+
+			LinkedList<Line> linesList = treeParser.getLinesList();
+			LinkedList<Point> pointsList = treeParser.getPointsList();
+			LinkedList<Area> areasList = treeParser.getAreasList();
+
+			String treeLayerId = Utils.splitString(continuousTreeModel.getTreeFilename(), "/");
+			Layer treeLayer = new Layer(treeLayerId, //
+					"Tree layer", //
+					pointsList, //
+					linesList, //
+					areasList);
+			layersList.add(treeLayer);
+
+			AxisAttributes axis = new AxisAttributes(continuousTreeModel.getxCoordinate(),
+					continuousTreeModel.getyCoordinate());
+
+			SpreadData spreadData = new SpreadData(timeLine, //
+					axis, //
+					mapAttributes, //
+					lineAttributes, //
+					pointAttributes, //
+					areaAttributes, null, // locations
+					layersList);
+
+			String json = new GsonBuilder().create().toJson(spreadData);
+
+			return ResponseEntity.ok().header(new HttpHeaders().toString()).body(json);
+		} catch (IOException e) {
+			logger.log(e.getMessage(), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+		} catch (ImportException e) {
+			logger.log(e.getMessage(), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+		} catch (SpreadException e) {
+			logger.log(e.getMessage(), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+		}
+
+	}
+
 	@RequestMapping(path = "/model", method = RequestMethod.GET, produces = "application/json")
 	public ResponseEntity<ContinuousTreeModelEntity> getModel() throws IOException, ImportException {
 
@@ -193,12 +338,17 @@ public class ContinuousTreeController {
 		return ResponseEntity.ok().header(new HttpHeaders().toString()).body(continuousTreeModel);
 	}
 
-	private void checkInterval(Double value, Double min, Double max) throws ControllerException {
+	private void checkInterval(Double value, Double min, Double max) throws SpreadException {
 		if (value >= min && value <= max) {
 			return;
 		} else {
-			throw new ControllerException("value is outside of permitted interval [" + min + "," + max + "]");
+			throw new SpreadException("value is outside of permitted interval [" + min + "," + max + "]");
 		}
+	}
+
+	// TODO: spec it
+	private void checkIsDate(String date) throws SpreadException {
+		return;
 	}
 
 }
