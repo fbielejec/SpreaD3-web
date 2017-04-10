@@ -35,7 +35,7 @@ public class ContinuousTreeModelEntity {
 	private double timescaleMultiplier; // 1.0
 
 	@Column
-	private String outputFilename;// = "output.json";
+	private String outputFilename;
 
 	@Column(name = "geojson_filename", nullable = true)
 	private String geojsonFilename;

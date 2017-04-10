@@ -7,15 +7,19 @@ import org.joda.time.format.DateTimeFormatter;
 import com.spread.data.TimeLine;
 import com.spread.utils.Utils;
 import com.spread.exceptions.SpreadException;
+import com.spread.loggers.ILogger;
+import com.spread.loggers.LoggerFactory;
 
 public class TimeParser {
 
+	private final ILogger logger;
 	private String mrsd;
 	private LocalDate endDate;
 	private DateTimeFormatter dateFormatter;
 
 	public TimeParser(String mrsd) throws SpreadException {
 
+		this.logger = new LoggerFactory().getLogger(LoggerFactory.DEFAULT);
 		this.mrsd = mrsd;
 		this.dateFormatter = DateTimeFormat.forPattern("yyyy/MM/dd");
 
@@ -45,8 +49,8 @@ public class TimeParser {
 			month = Integer.valueOf(endDateFields[Utils.MONTH_INDEX]);
 			day = Integer.valueOf(endDateFields[Utils.DAY_INDEX]);
 
-			System.out.println("MRSD in a decimal date format corresponds to yyyy/MM/dd format: " + year + "/" + month
-					+ "/" + day);
+			logger.log("MRSD in a decimal date format corresponds to yyyy/MM/dd format: " + year + "/" + month
+					+ "/" + day, ILogger.INFO);
 
 		} else if (mrsd.contains("/")) {
 
@@ -70,12 +74,10 @@ public class TimeParser {
 				throw new SpreadException("Unrecognised date format " + this.mrsd);
 			}
 
-			System.out.println("MRSD is in yyyy/MM/dd format : " + year + "/" + month + "/" + day);
+			logger.log("MRSD is in yyyy/MM/dd format : " + year + "/" + month + "/" + day, ILogger.INFO);
 
 		} else {
-
 			throw new SpreadException("Unrecognised MRSD format " + this.mrsd);
-
 		}
 
 		// joda monthOfYear must be [1,12]
