@@ -43,7 +43,7 @@ curl -X GET http://localhost:8080/continuous/model
 
 echo -e '\n'
 
-# GET json settings
-#curl -X GET http://localhost:8080/continuous/output 
+# GET json output
+curl -X GET http://localhost:8080/continuous/output 
 
 echo -e '\n'

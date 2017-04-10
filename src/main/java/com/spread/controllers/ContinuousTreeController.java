@@ -1,14 +1,20 @@
 package com.spread.controllers;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -285,8 +291,7 @@ public class ContinuousTreeController {
 
 				layersList.add(geojsonLayer);
 
-				System.out.println("Parsed map attributes");
-
+				logger.log("Parsed map attributes", ILogger.INFO);
 			} // END: null check
 
 			// ---DATA LAYER (TREE LINES & POINTS, AREAS)---//
@@ -311,10 +316,18 @@ public class ContinuousTreeController {
 					mapAttributes, //
 					lineAttributes, //
 					pointAttributes, //
-					areaAttributes, null, // locations
+					areaAttributes, //
+					null, // locations
 					layersList);
 
 			String json = new GsonBuilder().create().toJson(spreadData);
+
+			// TODO: persists as treefilename.json
+//			MultipartFile file = getMultipartFile(json, "output.json");
+//			storageService.store(file);
+//			continuousTreeModel.setOutputFilename(
+//					storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
+//			repository.save(continuousTreeModel);
 
 			return ResponseEntity.ok().header(new HttpHeaders().toString()).body(json);
 		} catch (IOException e) {
@@ -338,6 +351,7 @@ public class ContinuousTreeController {
 		return ResponseEntity.ok().header(new HttpHeaders().toString()).body(continuousTreeModel);
 	}
 
+	// TODO: boolean
 	private void checkInterval(Double value, Double min, Double max) throws SpreadException {
 		if (value >= min && value <= max) {
 			return;
@@ -346,9 +360,21 @@ public class ContinuousTreeController {
 		}
 	}
 
-	// TODO: spec it
+	// TODO: boolean, sth like clj-spec
 	private void checkIsDate(String date) throws SpreadException {
 		return;
+	}
+
+	private MultipartFile getMultipartFile(String json, String outputFileName)
+			throws IOException, FileNotFoundException {
+		File file = new File(outputFileName);
+		FileWriter fw = new FileWriter(file);
+		fw.write(json);
+		fw.close();
+		FileInputStream input = new FileInputStream(json);
+		MultipartFile multipartFile = new MockMultipartFile(outputFileName, outputFileName, "text/plain",
+				IOUtils.toByteArray(input));
+		return multipartFile;
 	}
 
 }
