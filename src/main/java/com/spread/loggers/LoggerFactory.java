@@ -8,8 +8,10 @@ public class LoggerFactory extends AbstractLoggerFactory {
 
 	@Override
 	public ILogger getLogger(int loggerType) {
-		ILogger logger = Match(loggerType).of(Case($(DEFAULT), new DefaultLogger()), //
-				Case($(), new DefaultLogger()));
+		ILogger logger = Match(loggerType).of(
+				Case($(DEFAULT), new DefaultLogger()), //
+				Case($(), new DefaultLogger()) // different loggers not yet implemented
+				);
 		return logger;
 	}
 
