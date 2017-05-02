@@ -323,11 +323,18 @@ public class ContinuousTreeController {
 			String json = new GsonBuilder().create().toJson(spreadData);
 
 			// TODO: persists as treefilename.json
-//			MultipartFile file = getMultipartFile(json, "output.json");
-//			storageService.store(file);
-//			continuousTreeModel.setOutputFilename(
-//					storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
-//			repository.save(continuousTreeModel);
+			// TODO: persis in storageDIr
+			String outputFileName = "output.json";
+			FileWriter fw = new FileWriter(new File(outputFileName));
+			fw.write(json);
+			fw.close();
+			FileInputStream input = new FileInputStream(json);
+			MultipartFile file = new MockMultipartFile(outputFileName, outputFileName, "text/plain",
+					IOUtils.toByteArray(input));
+
+			continuousTreeModel.setOutputFilename(
+					storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
+			repository.save(continuousTreeModel);
 
 			return ResponseEntity.ok().header(new HttpHeaders().toString()).body(json);
 		} catch (IOException e) {
@@ -365,16 +372,16 @@ public class ContinuousTreeController {
 		return;
 	}
 
-	private MultipartFile getMultipartFile(String json, String outputFileName)
-			throws IOException, FileNotFoundException {
-		File file = new File(outputFileName);
-		FileWriter fw = new FileWriter(file);
-		fw.write(json);
-		fw.close();
-		FileInputStream input = new FileInputStream(json);
-		MultipartFile multipartFile = new MockMultipartFile(outputFileName, outputFileName, "text/plain",
-				IOUtils.toByteArray(input));
-		return multipartFile;
-	}
+//	private MultipartFile getMultipartFile(String json, String outputFileName)
+//			throws IOException, FileNotFoundException {
+//		File file = new File(outputFileName);
+//		FileWriter fw = new FileWriter(file);
+//		fw.write(json);
+//		fw.close();
+//		FileInputStream input = new FileInputStream(json);
+//		MultipartFile multipartFile = new MockMultipartFile(outputFileName, outputFileName, "text/plain",
+//				IOUtils.toByteArray(input));
+//		return multipartFile;
+//	}
 
 }
