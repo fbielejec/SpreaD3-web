@@ -65,16 +65,23 @@ public class ContinuousTreeController {
 	@RequestMapping(path = "/tree", method = RequestMethod.POST)
 	public ResponseEntity<Object> uploadTree(@RequestParam(value = "treefile", required = true) MultipartFile file) {
 		try {
-
+			
+			String filename = file.getOriginalFilename();
+			
+			if(storageService.exists(file)) {
+				storageService.delete(filename);
+				logger.log("Deleting previously uploaded tree file: " + filename, ILogger.INFO);
+			}
+			
 			// store the file
 			storageService.store(file);
 
 			ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity();
 			continuousTreeModel.setTreeFilename(
-					storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
+					storageService.loadAsResource(filename).getFile().getAbsolutePath());
 			repository.save(continuousTreeModel);
 
-			logger.log("tree file successfully persisted.", ILogger.INFO);
+			logger.log("tree file " + filename + " successfully persisted.", ILogger.INFO);
 			return new ResponseEntity<>(HttpStatus.OK);
 
 		} catch (IOException e) {

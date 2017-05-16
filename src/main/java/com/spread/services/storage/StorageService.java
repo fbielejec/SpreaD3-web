@@ -12,6 +12,8 @@ public interface StorageService {
 
     Boolean isInitialized();
     
+    boolean exists(MultipartFile file);
+    
     void store(MultipartFile file) throws StorageException;
 
     Stream<Path> loadAll();
