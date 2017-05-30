@@ -1,49 +1,51 @@
 #!/bin/bash
 
+PORT=4000
+
 # POST tree file
-curl -X POST -H "Content-Type: multipart/form-data" -F "treefile=@/home/filip/Dropbox/JavaProjects/spread3-web/src/test/resources/continuous/speciesDiffusion.MCC.tre" http://localhost:8080/continuous/tree 
+curl -X POST -H "Content-Type: multipart/form-data" -F "treefile=@/home/filip/Dropbox/JavaProjects/spread3-web/src/test/resources/continuous/speciesDiffusion.MCC.tre" http://localhost:$PORT/continuous/tree 
 
 echo -e '\n'
 
 # POST ycoordinate
-curl -X POST --data "attribute=trait1" http://localhost:8080/continuous/coordinates/y
+curl -X POST --data "attribute=trait1" http://localhost:$PORT/continuous/coordinates/y
 
 echo -e '\n'
 
 # POST xcoordinate
-curl -X POST --data "attribute=trait2" http://localhost:8080/continuous/coordinates/x
+curl -X POST --data "attribute=trait2" http://localhost:$PORT/continuous/coordinates/x
 
 echo -e '\n'
 
 # POST external-annotations
-curl -X POST --data "has-external-annotations=true" http://localhost:8080/continuous/external-annotations
+curl -X POST --data "has-external-annotations=true" http://localhost:$PORT/continuous/external-annotations
 
 echo -e '\n'
 
 # POST hpd-level
-curl -X POST --data "hpd-level=0.95" http://localhost:8080/continuous/hpd-level
+curl -X POST --data "hpd-level=0.95" http://localhost:$PORT/continuous/hpd-level
 
 echo -e '\n'
 
 # POST timescale-multiplier
-curl -X POST --data "timescale-multiplier=0.95" http://localhost:8080/continuous/timescale-multiplier
+curl -X POST --data "timescale-multiplier=0.95" http://localhost:$PORT/continuous/timescale-multiplier
 
 echo -e '\n'
 
 # POST mrsd
-curl -X POST --data "mrsd=2017/04/06" http://localhost:8080/continuous/mrsd
+curl -X POST --data "mrsd=2017/04/06" http://localhost:$PORT/continuous/mrsd
 
 echo -e '\n'
 
 # POST geojson file
-curl -X POST -H "Content-Type: multipart/form-data" -F "geojsonfile=@/home/filip/Dropbox/JavaProjects/spread3-web/src/test/resources/geojson/subregion_Australia_and_New_Zealand_subunits.geojson" http://localhost:8080/continuous/geojson 
+curl -X POST -H "Content-Type: multipart/form-data" -F "geojsonfile=@/home/filip/Dropbox/JavaProjects/spread3-web/src/test/resources/geojson/subregion_Australia_and_New_Zealand_subunits.geojson" http://localhost:$PORT/continuous/geojson 
 
 # GET model settings
-curl -X GET http://localhost:8080/continuous/model
+curl -X GET http://localhost:$PORT/continuous/model
 
 echo -e '\n'
 
 # GET json output
-curl -X GET http://localhost:8080/continuous/output 
+curl -X GET http://localhost:$PORT/continuous/output 
 
 echo -e '\n'

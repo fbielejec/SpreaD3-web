@@ -32,6 +32,11 @@
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
 
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.liquibase</groupId> -->
+<!-- 			<artifactId>liquibase-core</artifactId> -->
+<!-- 		</dependency> -->
+
 		<dependency>
 			<groupId>io.javaslang</groupId>
 			<artifactId>javaslang</artifactId>
@@ -77,6 +82,14 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 		</dependency>
+
+		<!-- DEV -->
+
+		<!-- <dependency> -->
+		<!-- <groupId>org.springframework.boot</groupId> -->
+		<!-- <artifactId>spring-boot-devtools</artifactId> -->
+		<!-- <optional>true</optional> -->
+		<!-- </dependency> -->
 
 	</dependencies>
 

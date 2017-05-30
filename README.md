@@ -21,8 +21,6 @@ REST Web Services to SpreaD3, capable of generating links with on-line visualisa
    but WITHOUT ANY WARRANTY; without even the implied warranty of 
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
    "GNU Lesser General Public License": http://www.gnu.org/licenses/lgpl.html for more details.
-
-
  
 ## Test
 
@@ -31,6 +29,9 @@ mvn test
 ## Dev
 
 mvn spring-boot:run
+
+# Embedded database console (url: jdbc:h2:~/test username: test password: test) 
+http://localhost:4000/h2-console/
  
 ## Production
 

@@ -38,6 +38,7 @@ import com.spread.loggers.LoggerFactory;
 import com.spread.parsers.ContinuousTreeParser;
 import com.spread.parsers.GeoJSONParser;
 import com.spread.parsers.TimeParser;
+import com.spread.repositories.AttributeRepository;
 import com.spread.repositories.ContinuousTreeModelRepository;
 import com.spread.services.storage.StorageException;
 import com.spread.services.storage.StorageService;
@@ -55,8 +56,11 @@ public class ContinuousTreeController {
 	private final StorageService storageService;
 
 	@Autowired
-	private ContinuousTreeModelRepository repository;
+	private ContinuousTreeModelRepository modelRepository;
 
+	@Autowired
+	private AttributeRepository attributeRepository;
+	
 	public ContinuousTreeController(StorageService storageService) {
 		this.logger = new LoggerFactory().getLogger(LoggerFactory.DEFAULT);
 		this.storageService = storageService;
@@ -79,7 +83,7 @@ public class ContinuousTreeController {
 			ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity();
 			continuousTreeModel.setTreeFilename(
 					storageService.loadAsResource(filename).getFile().getAbsolutePath());
-			repository.save(continuousTreeModel);
+			modelRepository.save(continuousTreeModel);
 
 			logger.log("tree file " + filename + " successfully persisted.", ILogger.INFO);
 			return new ResponseEntity<>(HttpStatus.OK);
@@ -100,22 +104,25 @@ public class ContinuousTreeController {
 		storageService.delete(filename);
 
 		// delete the entity
-		ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
-		repository.delete(continuousTreeModel);
+		ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
+		modelRepository.delete(continuousTreeModel);
 
 		logger.log("tree file successfully deleted.", ILogger.INFO);
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
+	// TODO: persist list of attributes for reuse
 	@RequestMapping(path = "/attributes", method = RequestMethod.GET, produces = "application/json")
 	public ResponseEntity<Set<String>> attributes() throws IOException, ImportException {
 
-		ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
+		ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
 
 		RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
 		Set<String> uniqueAttributes = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
 				.flatMap(node -> node.getAttributeNames().stream()).collect(Collectors.toSet());
 
+//		attributeRepository.
+		
 		return ResponseEntity.ok()
 				.header(HttpHeaders.CONTENT_DISPOSITION,
 						"attachment; filename=\"" + continuousTreeModel.getTreeFilename() + "\"")
@@ -125,9 +132,9 @@ public class ContinuousTreeController {
 	@RequestMapping(value = { "/coordinates/y", "/coordinates/latitude" }, method = RequestMethod.POST)
 	public ResponseEntity<Void> setyCoordinates(@RequestParam(value = "attribute", required = true) String attribute) {
 
-		ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
+		ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
 		continuousTreeModel.setyCoordinate(attribute);
-		repository.save(continuousTreeModel);
+		modelRepository.save(continuousTreeModel);
 
 		logger.log("y coordinate successfully set.", ILogger.INFO);
 		return new ResponseEntity<>(HttpStatus.OK);
@@ -136,9 +143,9 @@ public class ContinuousTreeController {
 	@RequestMapping(value = { "/coordinates/x", "/coordinates/longitude" }, method = RequestMethod.POST)
 	public ResponseEntity<Void> setxCoordinates(@RequestParam(value = "attribute", required = true) String attribute) {
 
-		ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
+		ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
 		continuousTreeModel.setxCoordinate(attribute);
-		repository.save(continuousTreeModel);
+		modelRepository.save(continuousTreeModel);
 
 		logger.log("x coordinate successfully set.", ILogger.INFO);
 		return new ResponseEntity<>(HttpStatus.OK);
@@ -148,23 +155,42 @@ public class ContinuousTreeController {
 	public ResponseEntity<Void> setHasExternalAnnotations(
 			@RequestParam(value = "has-external-annotations", required = true) Boolean hasExternalAnnotations) {
 
-		ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
+		ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
 		continuousTreeModel.setHasExternalAnnotations(hasExternalAnnotations);
-		repository.save(continuousTreeModel);
+		modelRepository.save(continuousTreeModel);
 
 		logger.log("external annotations parameter successfully set.", ILogger.INFO);
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
+	// TODO: implement
+	private Set<String> getHpdLevels(RootedTree tree) {
+	 
+		return null;
+	}
+	
+	
+	// TODO: read attributes to filter as HPD from db
+	@RequestMapping(path = "/hpd-levels", method = RequestMethod.GET, produces = "application/json")
+	public ResponseEntity<Set<String>> hpdLevels() throws IOException, ImportException {
+
+		ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
+
+		RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
+		Set<String> hpdLevels = getHpdLevels(tree);
+		
+		return ResponseEntity.ok().body(hpdLevels);
+	}
+	
 	@RequestMapping(path = "/hpd-level", method = RequestMethod.POST)
 	public ResponseEntity<Object> setHpdLevel(@RequestParam(value = "hpd-level", required = true) Double hpdLevel) {
 		try {
 
 			checkInterval(hpdLevel, 0.0, 1.0);
 
-			ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
+			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
 			continuousTreeModel.setHpdLevel(hpdLevel);
-			repository.save(continuousTreeModel);
+			modelRepository.save(continuousTreeModel);
 
 			logger.log("hpd level parameter successfully set.", ILogger.INFO);
 			return new ResponseEntity<>(HttpStatus.OK);
@@ -180,9 +206,9 @@ public class ContinuousTreeController {
 
 			checkIsDate(mrsd);
 
-			ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
+			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
 			continuousTreeModel.setMrsd(mrsd);
-			repository.save(continuousTreeModel);
+			modelRepository.save(continuousTreeModel);
 
 			logger.log("Mrsd parameter successfully set.", ILogger.INFO);
 			return new ResponseEntity<>(HttpStatus.OK);
@@ -199,9 +225,9 @@ public class ContinuousTreeController {
 		try {
 			checkInterval(timescaleMultiplier, Double.MIN_NORMAL, Double.MAX_VALUE);
 
-			ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
+			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
 			continuousTreeModel.setTimescaleMultiplier(timescaleMultiplier);
-			repository.save(continuousTreeModel);
+			modelRepository.save(continuousTreeModel);
 
 			logger.log("timescale multiplier parameter successfully set.", ILogger.INFO);
 			return new ResponseEntity<>(HttpStatus.OK);
@@ -215,12 +241,19 @@ public class ContinuousTreeController {
 	public ResponseEntity<Object> uploadGeojson(
 			@RequestParam(value = "geojsonfile", required = true) MultipartFile file) throws IOException {
 
+		String filename = file.getOriginalFilename();
+		
+		if(storageService.exists(file)) {
+			storageService.delete(filename);
+			logger.log("Deleting previously uploaded geojson file: " + filename, ILogger.INFO);
+		}
+		
 		storageService.store(file);
 
-		ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
+		ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
 		continuousTreeModel.setGeojsonFilename(
 				storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
-		repository.save(continuousTreeModel);
+		modelRepository.save(continuousTreeModel);
 
 		logger.log("geojson file successfully uploaded.", ILogger.INFO);
 
@@ -233,9 +266,9 @@ public class ContinuousTreeController {
 
 		storageService.delete(filename);
 
-		ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
+		ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
 		continuousTreeModel.setGeojsonFilename(null);
-		repository.save(continuousTreeModel);
+		modelRepository.save(continuousTreeModel);
 
 		logger.log("geojson file successfully deleted.", ILogger.INFO);
 
@@ -247,7 +280,7 @@ public class ContinuousTreeController {
 
 		try {
 
-			ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
+			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
 
 			TimeLine timeLine = null;
 			LinkedList<Attribute> mapAttributes = null;
@@ -342,7 +375,7 @@ public class ContinuousTreeController {
 
 			continuousTreeModel.setOutputFilename(
 					storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
-			repository.save(continuousTreeModel);
+			modelRepository.save(continuousTreeModel);
 
 			return ResponseEntity.ok().header(new HttpHeaders().toString()).body(json);
 		} catch (IOException e) {
@@ -361,12 +394,12 @@ public class ContinuousTreeController {
 	@RequestMapping(path = "/model", method = RequestMethod.GET, produces = "application/json")
 	public ResponseEntity<ContinuousTreeModelEntity> getModel() throws IOException, ImportException {
 
-		ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
+		ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
 
 		return ResponseEntity.ok().header(new HttpHeaders().toString()).body(continuousTreeModel);
 	}
 
-	// TODO: boolean
+	// TODO: boolean, sth like clj-spec
 	private void checkInterval(Double value, Double min, Double max) throws SpreadException {
 		if (value >= min && value <= max) {
 			return;
