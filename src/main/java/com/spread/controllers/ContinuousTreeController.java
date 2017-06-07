@@ -365,17 +365,18 @@ public class ContinuousTreeController {
 
 			// TODO: persists as treefilename.json
 			// TODO: persis in storageDIr
-			String outputFileName = "output.json";
-			FileWriter fw = new FileWriter(new File(outputFileName));
-			fw.write(json);
-			fw.close();
-			FileInputStream input = new FileInputStream(json);
-			MultipartFile file = new MockMultipartFile(outputFileName, outputFileName, "text/plain",
-					IOUtils.toByteArray(input));
-
-			continuousTreeModel.setOutputFilename(
-					storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
-			modelRepository.save(continuousTreeModel);
+//			String outputFileName = "output.json";
+//			FileWriter fw = new FileWriter(new File(storageService.getRootLocation() + "/" +  outputFileName));
+//			fw.write(json);
+//			fw.close();
+//			FileInputStream input = new FileInputStream(json);
+//			MultipartFile file = new MockMultipartFile(outputFileName, outputFileName, "text/plain",
+//					IOUtils.toByteArray(input));
+//			storageService.store(file);
+//			
+//			continuousTreeModel.setOutputFilename(
+//					storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
+//			modelRepository.save(continuousTreeModel);
 
 			return ResponseEntity.ok().header(new HttpHeaders().toString()).body(json);
 		} catch (IOException e) {

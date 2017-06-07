@@ -1,10 +1,15 @@
 package com.spread.domain;
 
+import java.util.Set;
+
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 @Entity
@@ -12,36 +17,48 @@ import javax.persistence.Table;
 public class ContinuousTreeModelEntity {
 
 	@Id
-	@Column
+	@Column(name = "id", nullable = false)
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private Integer id;
 
 	@Column(name = "tree_filename", nullable = false)
 	private String treeFilename;
 
-	@Column
+	@Column(name = "x_coordinate", nullable = true)
 	private String xCoordinate; // long
 
-	@Column
+	@Column(name = "y_coordinate", nullable = true)
 	private String yCoordinate; // lat
 
-	@Column
+	@Column(name = "hpd_level", nullable = true)
 	private Double hpdLevel;
 
-	@Column
+	@Column(name = "mrsd", nullable = true)
 	private String mrsd;
 
-	@Column
-	private double timescaleMultiplier; // 1.0
+	@Column(name = "timescale_multiplier", nullable = true)
+	private double timescaleMultiplier;
 
-	@Column
+	@Column(name = "output_filename", nullable = true)
 	private String outputFilename;
 
 	@Column(name = "geojson_filename", nullable = true)
 	private String geojsonFilename;
 
-	@Column
-	private boolean hasExternalAnnotations; // false;
+	@Column(name = "has_external_annotations", nullable = true)
+	private boolean hasExternalAnnotations;
+
+	@OneToMany(cascade = CascadeType.ALL)
+	@ElementCollection(targetClass = AttributeEntity.class)
+	private Set<AttributeEntity> attributes;
+
+	public Set<AttributeEntity> getAttributes() {
+		return attributes;
+	}
+
+	public void setBooks(Set<AttributeEntity> attributes) {
+		this.attributes = attributes;
+	}
 
 	public String getxCoordinate() {
 		return xCoordinate;
