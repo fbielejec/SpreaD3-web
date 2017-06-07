@@ -2,7 +2,8 @@ package com.spread.utils;
 
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Random;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import com.spread.exceptions.SpreadException;
 
@@ -14,7 +15,6 @@ import jebl.evolution.trees.RootedTree;
 
 public class Utils {
 
-	private static final Random random = new Random();
 	public static final double EARTH_RADIUS = 6371.0;
 
 	public static final String EMPTY_STRING = "";
@@ -44,6 +44,13 @@ public class Utils {
 	public static final int Y_INDEX = 1;
 	public static final String NEGATIVE_SIGN = "-";
 
+	public static String getStackTrace(Exception e) {
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		e.printStackTrace(pw);
+		return sw.toString();
+	}
+	
 	public static String splitString(String string, String c) {
 		String[] id = string.split(c);
 		return id[id.length - 1];

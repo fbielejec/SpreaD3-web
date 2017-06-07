@@ -1,19 +1,16 @@
 package com.spread.controllers;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,6 +28,7 @@ import com.spread.data.attributable.Area;
 import com.spread.data.attributable.Line;
 import com.spread.data.attributable.Point;
 import com.spread.data.geojson.GeoJsonData;
+import com.spread.domain.AttributeEntity;
 import com.spread.domain.ContinuousTreeModelEntity;
 import com.spread.exceptions.SpreadException;
 import com.spread.loggers.ILogger;
@@ -76,23 +74,32 @@ public class ContinuousTreeController {
 				storageService.delete(filename);
 				logger.log("Deleting previously uploaded tree file: " + filename, ILogger.INFO);
 			}
-			
-			// store the file
-			storageService.store(file);
 
-			ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity();
-			continuousTreeModel.setTreeFilename(
-					storageService.loadAsResource(filename).getFile().getAbsolutePath());
-			modelRepository.save(continuousTreeModel);
-
+			storageService.store(file);	
 			logger.log("tree file " + filename + " successfully persisted.", ILogger.INFO);
-			return new ResponseEntity<>(HttpStatus.OK);
+			
+			ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity(storageService.loadAsResource(filename).getFile().getAbsolutePath());
 
-		} catch (IOException e) {
-			logger.log(e.getMessage(), ILogger.ERROR);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-		} catch (StorageException e) {
-			logger.log(e.getMessage(), ILogger.ERROR);
+			// TODO: no tree_id set
+			RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
+			Set<String> attributes = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
+					.flatMap(node -> node.getAttributeNames().stream()).collect(Collectors.toSet());
+
+			Set<AttributeEntity> atts = new HashSet<AttributeEntity>();
+			for (String name : attributes) {
+				atts.add(new AttributeEntity(name, continuousTreeModel));
+			}
+			
+//			attributeRepository.save(atts);
+			logger.log(atts.size() + " attributes successfully persisted.", ILogger.INFO);
+
+			continuousTreeModel.setAttributes(atts);
+			modelRepository.save(continuousTreeModel);	
+			logger.log("continuousTreeModelEntity with id " + continuousTreeModel.getId() + " successfully persisted.", ILogger.INFO);
+			
+			return new ResponseEntity<>(HttpStatus.OK);
+		} catch (Exception e) {
+			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
 		}
 	}
@@ -111,21 +118,31 @@ public class ContinuousTreeController {
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
-	// TODO: persist list of attributes for reuse
+	// TODO: get list of atts
 	@RequestMapping(path = "/attributes", method = RequestMethod.GET, produces = "application/json")
 	public ResponseEntity<Set<String>> attributes() throws IOException, ImportException {
 
-		ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
+//		ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
+//		RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
+//		Set<String> uniqueAttributes = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
+//				.flatMap(node -> node.getAttributeNames().stream()).collect(Collectors.toSet());
 
-		RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
-		Set<String> uniqueAttributes = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
-				.flatMap(node -> node.getAttributeNames().stream()).collect(Collectors.toSet());
+//		AttributeEntity attribute1 = new AttributeEntity(uniqueAttributes.iterator().next());
+//		AttributeEntity attribute2 = new AttributeEntity(uniqueAttributes.iterator().next());
+		
+//		Set atts = new HashSet<AttributeEntity>(){{
+//            add(new AttributeEntity(uniqueAttributes.iterator().next()));
+//            add(new AttributeEntity(uniqueAttributes.iterator().next()));
+//        }};
+//		
+//		continuousTreeModel.setAttributes(atts);
+//		
+//		modelRepository.save(continuousTreeModel);
+//		attributeRepository.save(atts);
 
-//		attributeRepository.
+		Set<String> uniqueAttributes = null;//attributeRepository.findAll().get(0);
 		
 		return ResponseEntity.ok()
-				.header(HttpHeaders.CONTENT_DISPOSITION,
-						"attachment; filename=\"" + continuousTreeModel.getTreeFilename() + "\"")
 				.body(uniqueAttributes);
 	}
 

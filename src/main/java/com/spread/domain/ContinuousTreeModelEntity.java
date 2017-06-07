@@ -48,18 +48,25 @@ public class ContinuousTreeModelEntity {
 	@Column(name = "has_external_annotations", nullable = true)
 	private boolean hasExternalAnnotations;
 
-	@OneToMany(cascade = CascadeType.ALL)
-	@ElementCollection(targetClass = AttributeEntity.class)
+	@OneToMany(mappedBy = "tree", cascade = CascadeType.ALL)
 	private Set<AttributeEntity> attributes;
+
+	public ContinuousTreeModelEntity(String absolutePath) {
+		this.treeFilename = absolutePath;
+	}
 
 	public Set<AttributeEntity> getAttributes() {
 		return attributes;
 	}
 
-	public void setBooks(Set<AttributeEntity> attributes) {
+	public void setAttributes(Set<AttributeEntity> attributes) {
 		this.attributes = attributes;
 	}
 
+	public Integer getId() {
+		return this.id;
+	}
+	
 	public String getxCoordinate() {
 		return xCoordinate;
 	}

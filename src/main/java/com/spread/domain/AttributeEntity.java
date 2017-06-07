@@ -22,8 +22,13 @@ public class AttributeEntity {
 	private String name;
 
 	@ManyToOne
-	@JoinColumn(name = "tree_id", nullable = true)
+	@JoinColumn(name = "fk_tree_id", nullable = false)
 	private ContinuousTreeModelEntity tree;
+
+	public AttributeEntity(String name, ContinuousTreeModelEntity tree) {
+		this.name = name;
+		this.tree = tree;
+	}
 
 	public Integer getId() {
 		return id;
