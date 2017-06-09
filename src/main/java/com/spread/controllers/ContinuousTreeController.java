@@ -38,7 +38,6 @@ import com.spread.parsers.GeoJSONParser;
 import com.spread.parsers.TimeParser;
 import com.spread.repositories.AttributeRepository;
 import com.spread.repositories.ContinuousTreeModelRepository;
-import com.spread.services.storage.StorageException;
 import com.spread.services.storage.StorageService;
 import com.spread.utils.Utils;
 
@@ -58,7 +57,7 @@ public class ContinuousTreeController {
 
 	@Autowired
 	private AttributeRepository attributeRepository;
-	
+
 	public ContinuousTreeController(StorageService storageService) {
 		this.logger = new LoggerFactory().getLogger(LoggerFactory.DEFAULT);
 		this.storageService = storageService;
@@ -67,36 +66,36 @@ public class ContinuousTreeController {
 	@RequestMapping(path = "/tree", method = RequestMethod.POST)
 	public ResponseEntity<Object> uploadTree(@RequestParam(value = "treefile", required = true) MultipartFile file) {
 		try {
-			
+
 			String filename = file.getOriginalFilename();
-			
-			if(storageService.exists(file)) {
+
+			if (storageService.exists(file)) {
 				storageService.delete(filename);
 				logger.log("Deleting previously uploaded tree file: " + filename, ILogger.INFO);
 			}
 
-			storageService.store(file);	
+			storageService.store(file);
 			logger.log("tree file " + filename + " successfully persisted.", ILogger.INFO);
-			
-			ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity(storageService.loadAsResource(filename).getFile().getAbsolutePath());
 
-			// TODO: no tree_id set
+			ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity(
+					storageService.loadAsResource(filename).getFile().getAbsolutePath());
+
 			RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
 			Set<String> attributes = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
 					.flatMap(node -> node.getAttributeNames().stream()).collect(Collectors.toSet());
 
+			// TODO java8ize it
 			Set<AttributeEntity> atts = new HashSet<AttributeEntity>();
 			for (String name : attributes) {
 				atts.add(new AttributeEntity(name, continuousTreeModel));
 			}
-			
-//			attributeRepository.save(atts);
-			logger.log(atts.size() + " attributes successfully persisted.", ILogger.INFO);
 
 			continuousTreeModel.setAttributes(atts);
-			modelRepository.save(continuousTreeModel);	
-			logger.log("continuousTreeModelEntity with id " + continuousTreeModel.getId() + " successfully persisted.", ILogger.INFO);
-			
+			modelRepository.save(continuousTreeModel);
+			logger.log("continuousTreeModelEntity with id " + continuousTreeModel.getId() + " successfully persisted.",
+					ILogger.INFO);
+			logger.log(atts.size() + " attributes successfully persisted.", ILogger.INFO);
+
 			return new ResponseEntity<>(HttpStatus.OK);
 		} catch (Exception e) {
 			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
@@ -118,32 +117,18 @@ public class ContinuousTreeController {
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
-	// TODO: get list of atts
+	// TODO: fix, throws exception
 	@RequestMapping(path = "/attributes", method = RequestMethod.GET, produces = "application/json")
 	public ResponseEntity<Set<String>> attributes() throws IOException, ImportException {
 
-//		ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
-//		RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
-//		Set<String> uniqueAttributes = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
-//				.flatMap(node -> node.getAttributeNames().stream()).collect(Collectors.toSet());
+		List<AttributeEntity> atts = attributeRepository.findAll();
 
-//		AttributeEntity attribute1 = new AttributeEntity(uniqueAttributes.iterator().next());
-//		AttributeEntity attribute2 = new AttributeEntity(uniqueAttributes.iterator().next());
-		
-//		Set atts = new HashSet<AttributeEntity>(){{
-//            add(new AttributeEntity(uniqueAttributes.iterator().next()));
-//            add(new AttributeEntity(uniqueAttributes.iterator().next()));
-//        }};
-//		
-//		continuousTreeModel.setAttributes(atts);
-//		
-//		modelRepository.save(continuousTreeModel);
-//		attributeRepository.save(atts);
+		Set<String> uniqueAttributes = new HashSet<String>();
+		for (AttributeEntity att : atts) {
+			uniqueAttributes.add(att.getName());
+		}
 
-		Set<String> uniqueAttributes = null;//attributeRepository.findAll().get(0);
-		
-		return ResponseEntity.ok()
-				.body(uniqueAttributes);
+		return ResponseEntity.ok().body(uniqueAttributes);
 	}
 
 	@RequestMapping(value = { "/coordinates/y", "/coordinates/latitude" }, method = RequestMethod.POST)
@@ -180,14 +165,12 @@ public class ContinuousTreeController {
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
-	// TODO: implement
+	// TODO: implement (read attributes to filter as HPD from db)
 	private Set<String> getHpdLevels(RootedTree tree) {
-	 
+
 		return null;
 	}
-	
-	
-	// TODO: read attributes to filter as HPD from db
+
 	@RequestMapping(path = "/hpd-levels", method = RequestMethod.GET, produces = "application/json")
 	public ResponseEntity<Set<String>> hpdLevels() throws IOException, ImportException {
 
@@ -195,10 +178,10 @@ public class ContinuousTreeController {
 
 		RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
 		Set<String> hpdLevels = getHpdLevels(tree);
-		
+
 		return ResponseEntity.ok().body(hpdLevels);
 	}
-	
+
 	@RequestMapping(path = "/hpd-level", method = RequestMethod.POST)
 	public ResponseEntity<Object> setHpdLevel(@RequestParam(value = "hpd-level", required = true) Double hpdLevel) {
 		try {
@@ -259,12 +242,12 @@ public class ContinuousTreeController {
 			@RequestParam(value = "geojsonfile", required = true) MultipartFile file) throws IOException {
 
 		String filename = file.getOriginalFilename();
-		
-		if(storageService.exists(file)) {
+
+		if (storageService.exists(file)) {
 			storageService.delete(filename);
 			logger.log("Deleting previously uploaded geojson file: " + filename, ILogger.INFO);
 		}
-		
+
 		storageService.store(file);
 
 		ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
@@ -380,20 +363,21 @@ public class ContinuousTreeController {
 
 			String json = new GsonBuilder().create().toJson(spreadData);
 
-			// TODO: persists as treefilename.json
-			// TODO: persis in storageDIr
-//			String outputFileName = "output.json";
-//			FileWriter fw = new FileWriter(new File(storageService.getRootLocation() + "/" +  outputFileName));
-//			fw.write(json);
-//			fw.close();
-//			FileInputStream input = new FileInputStream(json);
-//			MultipartFile file = new MockMultipartFile(outputFileName, outputFileName, "text/plain",
-//					IOUtils.toByteArray(input));
-//			storageService.store(file);
-//			
-//			continuousTreeModel.setOutputFilename(
-//					storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
-//			modelRepository.save(continuousTreeModel);
+			// TODO: persis in storageDir as treefilename.json
+			// String outputFileName = "output.json";
+			// FileWriter fw = new FileWriter(new
+			// File(storageService.getRootLocation() + "/" + outputFileName));
+			// fw.write(json);
+			// fw.close();
+			// FileInputStream input = new FileInputStream(json);
+			// MultipartFile file = new MockMultipartFile(outputFileName,
+			// outputFileName, "text/plain",
+			// IOUtils.toByteArray(input));
+			// storageService.store(file);
+			//
+			// continuousTreeModel.setOutputFilename(
+			// storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
+			// modelRepository.save(continuousTreeModel);
 
 			return ResponseEntity.ok().header(new HttpHeaders().toString()).body(json);
 		} catch (IOException e) {
@@ -431,16 +415,18 @@ public class ContinuousTreeController {
 		return;
 	}
 
-//	private MultipartFile getMultipartFile(String json, String outputFileName)
-//			throws IOException, FileNotFoundException {
-//		File file = new File(outputFileName);
-//		FileWriter fw = new FileWriter(file);
-//		fw.write(json);
-//		fw.close();
-//		FileInputStream input = new FileInputStream(json);
-//		MultipartFile multipartFile = new MockMultipartFile(outputFileName, outputFileName, "text/plain",
-//				IOUtils.toByteArray(input));
-//		return multipartFile;
-//	}
+	// private MultipartFile getMultipartFile(String json, String
+	// outputFileName)
+	// throws IOException, FileNotFoundException {
+	// File file = new File(outputFileName);
+	// FileWriter fw = new FileWriter(file);
+	// fw.write(json);
+	// fw.close();
+	// FileInputStream input = new FileInputStream(json);
+	// MultipartFile multipartFile = new MockMultipartFile(outputFileName,
+	// outputFileName, "text/plain",
+	// IOUtils.toByteArray(input));
+	// return multipartFile;
+	// }
 
 }

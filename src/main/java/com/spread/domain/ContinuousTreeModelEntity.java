@@ -4,7 +4,6 @@ import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
-import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -51,6 +50,9 @@ public class ContinuousTreeModelEntity {
 	@OneToMany(mappedBy = "tree", cascade = CascadeType.ALL)
 	private Set<AttributeEntity> attributes;
 
+	public ContinuousTreeModelEntity() {
+	}
+	
 	public ContinuousTreeModelEntity(String absolutePath) {
 		this.treeFilename = absolutePath;
 	}

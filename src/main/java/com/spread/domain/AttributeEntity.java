@@ -25,6 +25,9 @@ public class AttributeEntity {
 	@JoinColumn(name = "fk_tree_id", nullable = false)
 	private ContinuousTreeModelEntity tree;
 
+	public AttributeEntity() {
+	}
+	
 	public AttributeEntity(String name, ContinuousTreeModelEntity tree) {
 		this.name = name;
 		this.tree = tree;
