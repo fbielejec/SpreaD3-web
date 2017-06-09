@@ -12,6 +12,11 @@ curl -X GET http://localhost:$PORT/continuous/attributes
 
 echo -e '\n'
 
+# GET hpd-levels
+curl -X GET http://localhost:$PORT/continuous/hpd-levels
+
+echo -e '\n'
+
 # POST ycoordinate
 #curl -X POST --data "attribute=trait1" http://localhost:$PORT/continuous/coordinates/y
 

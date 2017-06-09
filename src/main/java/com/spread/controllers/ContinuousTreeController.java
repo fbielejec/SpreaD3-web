@@ -1,7 +1,6 @@
 package com.spread.controllers;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -75,25 +74,26 @@ public class ContinuousTreeController {
 			}
 
 			storageService.store(file);
+
 			logger.log("tree file " + filename + " successfully persisted.", ILogger.INFO);
 
 			ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity(
 					storageService.loadAsResource(filename).getFile().getAbsolutePath());
 
 			RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
-			Set<String> attributes = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
-					.flatMap(node -> node.getAttributeNames().stream()).collect(Collectors.toSet());
 
-			// TODO java8ize it
-			Set<AttributeEntity> atts = new HashSet<AttributeEntity>();
-			for (String name : attributes) {
-				atts.add(new AttributeEntity(name, continuousTreeModel));
-			}
+			Set<AttributeEntity> atts = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
+					.flatMap(node -> node.getAttributeNames().stream()).map(name -> {
+						return new AttributeEntity(name, continuousTreeModel);
+					}).collect(Collectors.toSet());
 
 			continuousTreeModel.setAttributes(atts);
+
 			modelRepository.save(continuousTreeModel);
+
 			logger.log("continuousTreeModelEntity with id " + continuousTreeModel.getId() + " successfully persisted.",
 					ILogger.INFO);
+
 			logger.log(atts.size() + " attributes successfully persisted.", ILogger.INFO);
 
 			return new ResponseEntity<>(HttpStatus.OK);
@@ -117,16 +117,14 @@ public class ContinuousTreeController {
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
-	// TODO: fix, throws exception
 	@RequestMapping(path = "/attributes", method = RequestMethod.GET, produces = "application/json")
 	public ResponseEntity<Set<String>> attributes() throws IOException, ImportException {
 
-		List<AttributeEntity> atts = attributeRepository.findAll();
+		List<AttributeEntity> attributeEntities = attributeRepository.findAll();
 
-		Set<String> uniqueAttributes = new HashSet<String>();
-		for (AttributeEntity att : atts) {
-			uniqueAttributes.add(att.getName());
-		}
+		Set<String> uniqueAttributes = attributeEntities.stream().map(attribute -> {
+			return attribute.getName();
+		}).collect(Collectors.toSet());
 
 		return ResponseEntity.ok().body(uniqueAttributes);
 	}
@@ -165,10 +163,16 @@ public class ContinuousTreeController {
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
-	// TODO: implement (read attributes to filter as HPD from db)
 	private Set<String> getHpdLevels(RootedTree tree) {
 
-		return null;
+		List<AttributeEntity> attributeEntities = attributeRepository.findAll();
+
+		Set<String> hpdAttributes = attributeEntities.stream().map(attribute -> {
+			return attribute.getName();
+		}).filter(attributeName -> attributeName.contains("HPD_modality"))
+				.map(hpdString -> hpdString.replaceAll("\\D+", "")).collect(Collectors.toSet());
+
+		return hpdAttributes;
 	}
 
 	@RequestMapping(path = "/hpd-levels", method = RequestMethod.GET, produces = "application/json")
@@ -184,46 +188,43 @@ public class ContinuousTreeController {
 
 	@RequestMapping(path = "/hpd-level", method = RequestMethod.POST)
 	public ResponseEntity<Object> setHpdLevel(@RequestParam(value = "hpd-level", required = true) Double hpdLevel) {
-		try {
 
-			checkInterval(hpdLevel, 0.0, 1.0);
+		Double min = 0.0;
+		Double max = 1.0;
 
+		if (isInInterval(hpdLevel, min, max)) {
 			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
 			continuousTreeModel.setHpdLevel(hpdLevel);
 			modelRepository.save(continuousTreeModel);
-
 			logger.log("hpd level parameter successfully set.", ILogger.INFO);
+
 			return new ResponseEntity<>(HttpStatus.OK);
-		} catch (SpreadException e) {
-			logger.log(e.getMessage(), ILogger.ERROR);
-			return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
+		} else {
+			String message = "value is outside of permitted interval [" + min + "," + max + "]";
+			logger.log(message, ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(message);
 		}
 	}
 
 	@RequestMapping(path = "/mrsd", method = RequestMethod.POST)
 	public ResponseEntity<Object> setMrsd(@RequestParam(value = "mrsd") String mrsd) {
-		try {
 
-			checkIsDate(mrsd);
+		ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
+		continuousTreeModel.setMrsd(mrsd);
+		modelRepository.save(continuousTreeModel);
 
-			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
-			continuousTreeModel.setMrsd(mrsd);
-			modelRepository.save(continuousTreeModel);
-
-			logger.log("Mrsd parameter successfully set.", ILogger.INFO);
-			return new ResponseEntity<>(HttpStatus.OK);
-		} catch (SpreadException e) {
-			logger.log(e.getMessage(), ILogger.ERROR);
-			return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
-		}
+		logger.log("Mrsd parameter successfully set.", ILogger.INFO);
+		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
 	@RequestMapping(path = "/timescale-multiplier", method = RequestMethod.POST)
 	public ResponseEntity<Object> setTimescaleMultiplier(
 			@RequestParam(value = "timescale-multiplier", required = true) Double timescaleMultiplier) {
 
-		try {
-			checkInterval(timescaleMultiplier, Double.MIN_NORMAL, Double.MAX_VALUE);
+		Double min = Double.MIN_NORMAL;
+		Double max = Double.MAX_VALUE;
+
+		if (isInInterval(timescaleMultiplier, min, max)) {
 
 			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findAll().get(0);
 			continuousTreeModel.setTimescaleMultiplier(timescaleMultiplier);
@@ -231,10 +232,12 @@ public class ContinuousTreeController {
 
 			logger.log("timescale multiplier parameter successfully set.", ILogger.INFO);
 			return new ResponseEntity<>(HttpStatus.OK);
-		} catch (SpreadException e) {
-			logger.log(e.getMessage(), ILogger.ERROR);
-			return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
+		} else {
+			String message = "value is outside of permitted interval [" + min + "," + max + "]";
+			logger.log(message, ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(message);
 		}
+
 	}
 
 	@RequestMapping(path = "/geojson", method = RequestMethod.POST)
@@ -401,17 +404,14 @@ public class ContinuousTreeController {
 		return ResponseEntity.ok().header(new HttpHeaders().toString()).body(continuousTreeModel);
 	}
 
-	// TODO: boolean, sth like clj-spec
-	private void checkInterval(Double value, Double min, Double max) throws SpreadException {
-		if (value >= min && value <= max) {
-			return;
-		} else {
-			throw new SpreadException("value is outside of permitted interval [" + min + "," + max + "]");
-		}
+	private Boolean isInInterval(Double value, Double min, Double max) {
+		if (value >= min && value <= max)
+			return true;
+		return false;
 	}
 
-	// TODO: boolean, sth like clj-spec
-	private void checkIsDate(String date) throws SpreadException {
+	// TODO: boolean
+	private void checkIsDate(String date) {
 		return;
 	}
 
