@@ -28,7 +28,7 @@ import com.spread.utils.TestUtils;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class ContinuousTreeControllerTest {
+public class ContinuousTreeControllerTests {
 
 	private static boolean setUp = false;
 
