@@ -2,22 +2,24 @@
 
 PORT=4000
 
-# GET the
+# GET jwt token
+TOKEN=$(curl -X GET http://localhost:$PORT/token |  jq -r '.token')
 
 # POST tree file
-curl -X POST -H "Content-Type: multipart/form-data" -F "treefile=@/home/filip/Dropbox/JavaProjects/spread3-web/src/test/resources/continuous/speciesDiffusion.MCC.tre" http://localhost:$PORT/continuous/tree 
+ 
+curl -X POST -H "Content-Type: multipart/form-data" -H "Authorization: Bearer $TOKEN" -F "treefile=@/home/filip/Dropbox/JavaProjects/spread3-web/src/test/resources/continuous/speciesDiffusion.MCC.tre" http://localhost:$PORT/continuous/tree 
 
 echo -e '\n'
 
 # GET attributes
-curl -X GET http://localhost:$PORT/continuous/attributes
+#curl -X GET http://localhost:$PORT/continuous/attributes
 
-echo -e '\n'
+#echo -e '\n'
 
 # GET hpd-levels
-curl -X GET http://localhost:$PORT/continuous/hpd-levels
+#curl -X GET http://localhost:$PORT/continuous/hpd-levels
 
-echo -e '\n'
+#echo -e '\n'
 
 # POST ycoordinate
 #curl -X POST --data "attribute=trait1" http://localhost:$PORT/continuous/coordinates/y

@@ -7,11 +7,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -38,8 +40,10 @@ import com.spread.parsers.TimeParser;
 import com.spread.repositories.AttributeRepository;
 import com.spread.repositories.ContinuousTreeModelRepository;
 import com.spread.services.storage.StorageService;
+import com.spread.utils.TokenUtils;
 import com.spread.utils.Utils;
 
+import io.jsonwebtoken.SignatureException;
 import jebl.evolution.io.ImportException;
 import jebl.evolution.trees.RootedTree;
 
@@ -47,6 +51,10 @@ import jebl.evolution.trees.RootedTree;
 @CrossOrigin
 @RequestMapping("/continuous")
 public class ContinuousTreeController {
+
+	// TODO: read key from DB
+	@Value("${secret}")
+	private String secret;
 
 	private final ILogger logger;
 	private final StorageService storageService;
@@ -62,25 +70,32 @@ public class ContinuousTreeController {
 		this.storageService = storageService;
 	}
 
-	// TODO: read JWT token from the Authorization: Bearer <token> header
-   // https://stackoverflow.com/questions/19556039/spring-mvc-controller-rest-service-needs-access-to-header-information-how-to-do
+	// TODO: verify token, store with session_id
 	@RequestMapping(path = "/tree", method = RequestMethod.POST)
-	public ResponseEntity<Object> uploadTree(@RequestParam(value = "treefile", required = true) MultipartFile file) {
+	public ResponseEntity<Object> uploadTree(@RequestHeader(value = "Authorization") String authorizationHeader,
+			@RequestParam(value = "treefile", required = true) MultipartFile file) {
+
 		try {
 
-			String filename = file.getOriginalFilename();
+			String token = TokenUtils.getBearerToken(authorizationHeader);
 
+			logger.log("Received token: " + token, ILogger.INFO);
+
+			String sessionId = TokenUtils.parseJWT(token, secret).get(TokenUtils.SESSION_ID).toString();
+
+			logger.log("Parsed sessionId: " + sessionId + " from token", ILogger.INFO);
+
+			String filename = file.getOriginalFilename();
 			if (storageService.exists(file)) {
 				storageService.delete(filename);
 				logger.log("Deleting previously uploaded tree file: " + filename, ILogger.INFO);
 			}
 
 			storageService.store(file);
-
 			logger.log("tree file " + filename + " successfully persisted.", ILogger.INFO);
 
 			ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity(
-					storageService.loadAsResource(filename).getFile().getAbsolutePath());
+					storageService.loadAsResource(filename).getFile().getAbsolutePath(), sessionId);
 
 			RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
 
@@ -99,9 +114,12 @@ public class ContinuousTreeController {
 			logger.log(atts.size() + " attributes successfully persisted.", ILogger.INFO);
 
 			return new ResponseEntity<>(HttpStatus.OK);
-		} catch (Exception e) {
+		} catch (IOException | ImportException e) {
 			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+		} catch (SignatureException e) {
+			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
 		}
 	}
 
@@ -410,11 +428,6 @@ public class ContinuousTreeController {
 		if (value >= min && value <= max)
 			return true;
 		return false;
-	}
-
-	// TODO: boolean
-	private void checkIsDate(String date) {
-		return;
 	}
 
 	// private MultipartFile getMultipartFile(String json, String

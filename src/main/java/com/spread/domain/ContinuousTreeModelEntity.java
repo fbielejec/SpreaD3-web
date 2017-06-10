@@ -23,6 +23,9 @@ public class ContinuousTreeModelEntity {
 	@Column(name = "tree_filename", nullable = false)
 	private String treeFilename;
 
+	@Column(name = "session_id", nullable = false)
+	private String sessionId;
+	
 	@Column(name = "x_coordinate", nullable = true)
 	private String xCoordinate; // long
 
@@ -50,13 +53,19 @@ public class ContinuousTreeModelEntity {
 	@OneToMany(mappedBy = "tree", cascade = CascadeType.ALL)
 	private Set<AttributeEntity> attributes;
 
-	public ContinuousTreeModelEntity() {
-	}
-	
-	public ContinuousTreeModelEntity(String absolutePath) {
+	public ContinuousTreeModelEntity(String absolutePath, String sessionId) {
 		this.treeFilename = absolutePath;
+		this.sessionId = sessionId;
 	}
 
+	public String getSessionId() {
+		return sessionId;
+	}
+
+	public void setSessionId(String sessionId) {
+		this.sessionId = sessionId;
+	}
+	
 	public Set<AttributeEntity> getAttributes() {
 		return attributes;
 	}
