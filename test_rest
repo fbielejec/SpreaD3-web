@@ -2,6 +2,8 @@
 
 PORT=4000
 
+# GET the
+
 # POST tree file
 curl -X POST -H "Content-Type: multipart/form-data" -F "treefile=@/home/filip/Dropbox/JavaProjects/spread3-web/src/test/resources/continuous/speciesDiffusion.MCC.tre" http://localhost:$PORT/continuous/tree 
 

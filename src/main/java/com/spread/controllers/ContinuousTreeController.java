@@ -62,6 +62,8 @@ public class ContinuousTreeController {
 		this.storageService = storageService;
 	}
 
+	// TODO: read JWT token from the Authorization: Bearer <token> header
+   // https://stackoverflow.com/questions/19556039/spring-mvc-controller-rest-service-needs-access-to-header-information-how-to-do
 	@RequestMapping(path = "/tree", method = RequestMethod.POST)
 	public ResponseEntity<Object> uploadTree(@RequestParam(value = "treefile", required = true) MultipartFile file) {
 		try {
