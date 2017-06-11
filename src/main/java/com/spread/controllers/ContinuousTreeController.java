@@ -87,7 +87,6 @@ public class ContinuousTreeController {
 
 			RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
 
-			// TODO: repeated atts
 			Set<AttributeEntity> atts = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
 					.flatMap(node -> node.getAttributeNames().stream()).map(name -> {
 						return new AttributeEntity(name, continuousTreeModel);
@@ -201,7 +200,7 @@ public class ContinuousTreeController {
 			} else {
 				String message = "value is outside of permitted interval [" + min + "," + max + "]";
 				logger.log(message, ILogger.ERROR);
-				return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(message);
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(message);
 			}
 
 		} catch (SignatureException e) {
@@ -283,12 +282,21 @@ public class ContinuousTreeController {
 			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
 			String sessionId = getSessionId(authorizationHeader);
 
-			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
-			continuousTreeModel.setMrsd(mrsd);
-			modelRepository.save(continuousTreeModel);
+			if (TimeParser.isParseableDate(mrsd)) {
 
-			logger.log("Mrsd parameter successfully set.", ILogger.INFO);
-			return new ResponseEntity<>(HttpStatus.OK);
+				ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+				continuousTreeModel.setMrsd(mrsd);
+				modelRepository.save(continuousTreeModel);
+
+				logger.log("Mrsd parameter successfully set.", ILogger.INFO);
+				return new ResponseEntity<>(HttpStatus.OK);
+
+			} else {
+				String message = "mrsd parameter is in a wrong format. Use " + "yyyy" + TimeParser.separator + "MM"
+						+ TimeParser.separator + "dd" + " format.";
+				logger.log(message, ILogger.ERROR);
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(message);
+			}
 
 		} catch (SignatureException e) {
 			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
@@ -320,7 +328,7 @@ public class ContinuousTreeController {
 			} else {
 				String message = "value is outside of permitted interval [" + min + "," + max + "]";
 				logger.log(message, ILogger.ERROR);
-				return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(message);
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(message);
 			}
 
 		} catch (SignatureException e) {

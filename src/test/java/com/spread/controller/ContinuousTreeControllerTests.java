@@ -1,19 +1,15 @@
 package com.spread.controller;
 
+import static org.junit.Assert.assertEquals;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import java.io.File;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
 
-import static org.junit.Assert.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.setup.MockMvcBuilders.*;
-
-import org.json.JSONArray;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,17 +22,12 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.reflect.TypeToken;
 import com.spread.utils.TestUtils;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class ContinuousTreeControllerTests {
-
-	// private static boolean setUp = false;
 
 	@Autowired
 	private WebApplicationContext webContext;
@@ -61,9 +52,48 @@ public class ContinuousTreeControllerTests {
 
 		getAttributes(token);
 
-		
-		
-		
+		getHpdLevels(token);
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/hpd-level").header("Authorization", "Bearer " + token)
+				.param("hpd-level", "1.1")).andExpect(status().isBadRequest());
+
+		String hpdLevel = String.valueOf(Double.valueOf(TestUtils.expectedHpdLevels.iterator().next()) / 100);
+		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/hpd-level").header("Authorization", "Bearer " + token)
+				.param("hpd-level", hpdLevel)).andExpect(status().isOk());
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/coordinates/y")
+				.header("Authorization", "Bearer " + token).param("attribute", TestUtils.yCoordinate))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/coordinates/x")
+				.header("Authorization", "Bearer " + token).param("attribute", TestUtils.xCoordinate))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/external-annotations")
+				.header("Authorization", "Bearer " + token).param("has-external-annotations", "true"))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/timescale-multiplier")
+				.header("Authorization", "Bearer " + token).param("timescale-multiplier", "-1.0"))
+				.andExpect(status().isBadRequest());
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/timescale-multiplier")
+				.header("Authorization", "Bearer " + token).param("timescale-multiplier", "1.0"))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/mrsd").header("Authorization", "Bearer " + token)
+				.param("mrsd", "2017/04/06")).andExpect(status().isBadRequest());
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/continuous/mrsd").header("Authorization", "Bearer " + token)
+				.param("mrsd", "2017-04-06")).andExpect(status().isOk());
+
+		uploadGeoJson(token);
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/continuous/output").header("Authorization", "Bearer " + token))
+				.andExpect(status().isOk());
+
+		// TODO: assert json can be retreived from DB by session-id
+
 	}
 
 	public void postContinuousTree(String token) throws Exception {
@@ -79,154 +109,41 @@ public class ContinuousTreeControllerTests {
 		mockMvc.perform(MockMvcRequestBuilders.fileUpload("/continuous/tree")
 				.file(new MockMultipartFile(name, originalFileName, contentType, content))
 				.header("Authorization", "Bearer " + token)).andExpect(status().isOk());
-
 	}
 
 	public void getAttributes(String token) throws Exception {
 		String response = mockMvc
-				.perform(MockMvcRequestBuilders.get("/continuous/attributes").header("Authorization", "Bearer " + token))
+				.perform(
+						MockMvcRequestBuilders.get("/continuous/attributes").header("Authorization", "Bearer " + token))
 				.andReturn().getResponse().getContentAsString();
 
-		Type setType = new TypeToken<Set<String>>(){}.getType();
-		Set<String> attributes = new Gson().fromJson(response, setType);
-
+		Set<String> attributes = TestUtils.jsonArrayToSet(response);
 		assertEquals(TestUtils.expectedAttributes, attributes);
 	}
 
-	
-	
-	/*
-	 * @Before public void setupMockMvc() throws Exception { mockMvc =
-	 * MockMvcBuilders.webAppContextSetup(webContext) // .build();
-	 * 
-	 * if (setUp) { return; }
-	 * 
-	 * uploadTree(); setUp = true; }
-	 */
+	private void getHpdLevels(String token) throws UnsupportedEncodingException, Exception {
+		String response = mockMvc
+				.perform(
+						MockMvcRequestBuilders.get("/continuous/hpd-levels").header("Authorization", "Bearer " + token))
+				.andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
 
-	/*
-	 * public void uploadTree() throws Exception { String filename =
-	 * "continuous/speciesDiffusion.MCC.tre"; File treefile = new
-	 * File(getClass().getClassLoader().getResource(filename).getFile());
-	 * 
-	 * Path path = Paths.get(treefile.getAbsolutePath()); String name =
-	 * "treefile"; String originalFileName = treefile.getName(); String
-	 * contentType = "text/plain"; byte[] content = Files.readAllBytes(path);
-	 * 
-	 * mockMvc.perform(MockMvcRequestBuilders.fileUpload("/continuous/tree")
-	 * .file(new MockMultipartFile(name, originalFileName, contentType,
-	 * content))).andExpect(status().isOk());
-	 * 
-	 * }
-	 */
+		Set<String> hpdLevels = TestUtils.jsonArrayToSet(response);
+		assertEquals(TestUtils.expectedHpdLevels, hpdLevels);
+	}
 
-	/*
-	 * private void uploadGeoJson() throws Exception { String filename =
-	 * "geojson/subregion_Australia_and_New_Zealand_subunits.geojson"; File
-	 * geojsonfile = new
-	 * File(getClass().getClassLoader().getResource(filename).getFile());
-	 * 
-	 * Path path = Paths.get(geojsonfile.getAbsolutePath()); String name =
-	 * "geojsonfile"; String originalFileName = geojsonfile.getName(); String
-	 * contentType = "text/plain"; byte[] content = Files.readAllBytes(path);
-	 * 
-	 * mockMvc.perform(MockMvcRequestBuilders.fileUpload("/continuous/geojson")
-	 * .file(new MockMultipartFile(name, originalFileName, contentType,
-	 * content))).andExpect(status().isOk()); }
-	 */
+	private void uploadGeoJson(String token) throws Exception {
+		String filename = "geojson/subregion_Australia_and_New_Zealand_subunits.geojson";
+		File geojsonfile = new File(getClass().getClassLoader().getResource(filename).getFile());
 
-	/*
-	 * @Test public void attributesTest() throws Exception {
-	 * mockMvc.perform(MockMvcRequestBuilders.get("/continuous/attributes")).
-	 * andExpect(status().isOk())
-	 * .andExpect(content().string(TestUtils.attributes)); }
-	 */
+		Path path = Paths.get(geojsonfile.getAbsolutePath());
+		String name = "geojsonfile";
+		String originalFileName = geojsonfile.getName();
+		String contentType = "text/plain";
+		byte[] content = Files.readAllBytes(path);
 
-	/*
-	 * @Test public void coordinatesTest() throws Exception { mockMvc.perform(
-	 * MockMvcRequestBuilders.post("/continuous/coordinates/y").param(
-	 * "attribute", TestUtils.yCoordinate)) .andExpect(status().isOk());
-	 * mockMvc.perform(
-	 * MockMvcRequestBuilders.post("/continuous/coordinates/x").param(
-	 * "attribute", TestUtils.xCoordinate)) .andExpect(status().isOk());
-	 * 
-	 * String content =
-	 * mockMvc.perform(MockMvcRequestBuilders.get("/continuous/model")).
-	 * andReturn().getResponse() .getContentAsString();
-	 * 
-	 * String xCoordinate = new Gson().fromJson(content,
-	 * ContinuousTreeModelEntity.class).getxCoordinate(); String yCoordinate =
-	 * new Gson().fromJson(content,
-	 * ContinuousTreeModelEntity.class).getyCoordinate();
-	 * 
-	 * assertEquals(TestUtils.xCoordinate, xCoordinate);
-	 * assertEquals(TestUtils.yCoordinate, yCoordinate); }
-	 */
-
-	/*
-	 * @Test public void externalAnnotationsTest() throws Exception {
-	 * mockMvc.perform(MockMvcRequestBuilders.post(
-	 * "/continuous/external-annotations") .param("has-external-annotations",
-	 * "true")).andExpect(status().isOk()); }
-	 */
-
-	/*
-	 * @Test public void hpdLevelTest() throws Exception {
-	 * mockMvc.perform(MockMvcRequestBuilders.post("/continuous/hpd-level").
-	 * param("hpd-level", "1.1")) .andExpect(status().isUnprocessableEntity());
-	 * mockMvc.perform(MockMvcRequestBuilders.post("/continuous/hpd-level").
-	 * param("hpd-level", "0.95")) .andExpect(status().isOk()); }
-	 */
-
-	/*
-	 * @Test public void timescaleMultiplierTest() throws Exception {
-	 * mockMvc.perform(
-	 * MockMvcRequestBuilders.post("/continuous/timescale-multiplier").param(
-	 * "timescale-multiplier", "-1.0"))
-	 * .andExpect(status().isUnprocessableEntity()); mockMvc.perform(
-	 * MockMvcRequestBuilders.post("/continuous/timescale-multiplier").param(
-	 * "timescale-multiplier", "1.0")) .andExpect(status().isOk()); }
-	 */
-
-	/*
-	 * @Test public void mrsdTest() throws Exception {
-	 * mockMvc.perform(MockMvcRequestBuilders.post("/continuous/mrsd").param(
-	 * "mrsd", "2017-04-06")) .andExpect(status().isOk()); }
-	 */
-
-	/*
-	 * @Test public void continuousTreeParserTest() throws Exception {
-	 * 
-	 * mockMvc.perform(
-	 * MockMvcRequestBuilders.post("/continuous/coordinates/y").param(
-	 * "attribute", TestUtils.yCoordinate)) .andExpect(status().isOk());
-	 * 
-	 * mockMvc.perform(
-	 * MockMvcRequestBuilders.post("/continuous/coordinates/x").param(
-	 * "attribute", TestUtils.xCoordinate)) .andExpect(status().isOk());
-	 * 
-	 * mockMvc.perform(MockMvcRequestBuilders.post(
-	 * "/continuous/external-annotations") .param("has-external-annotations",
-	 * "true")).andExpect(status().isOk());
-	 * 
-	 * mockMvc.perform(MockMvcRequestBuilders.post("/continuous/hpd-level").
-	 * param("hpd-level", "0.95")) .andExpect(status().isOk());
-	 * 
-	 * mockMvc.perform(
-	 * MockMvcRequestBuilders.post("/continuous/timescale-multiplier").param(
-	 * "timescale-multiplier", "1.0")) .andExpect(status().isOk());
-	 * 
-	 * mockMvc.perform(
-	 * MockMvcRequestBuilders.post("/continuous/mrsd").param("mrsd",
-	 * "2017/04/06")) .andExpect(status().isOk());
-	 * 
-	 * uploadGeoJson();
-	 * 
-	 * // TODO: test fails, why? //
-	 * mockMvc.perform(MockMvcRequestBuilders.get("/continuous/output")) // //
-	 * .andExpect(status().isOk());
-	 * 
-	 * }
-	 */
+		mockMvc.perform(MockMvcRequestBuilders.fileUpload("/continuous/geojson")
+				.file(new MockMultipartFile(name, originalFileName, contentType, content))
+				.header("Authorization", "Bearer " + token)).andExpect(status().isOk());
+	}
 
 }
