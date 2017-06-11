@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +36,7 @@ import com.spread.parsers.ContinuousTreeParser;
 import com.spread.parsers.GeoJSONParser;
 import com.spread.parsers.TimeParser;
 import com.spread.repositories.ContinuousTreeModelRepository;
+import com.spread.repositories.KeyRepository;
 import com.spread.services.storage.StorageService;
 import com.spread.utils.TokenUtils;
 import com.spread.utils.Utils;
@@ -50,18 +50,14 @@ import jebl.evolution.trees.RootedTree;
 @RequestMapping("/continuous")
 public class ContinuousTreeController {
 
-	// TODO: read key from DB
-	@Value("${secret}")
-	private String secret;
-
 	private final ILogger logger;
 	private final StorageService storageService;
 
 	@Autowired
 	private ContinuousTreeModelRepository modelRepository;
 
-	// @Autowired
-	// private AttributeRepository attributeRepository;
+	@Autowired
+	private KeyRepository keyRepository;
 
 	public ContinuousTreeController(StorageService storageService) {
 		this.logger = new LoggerFactory().getLogger(LoggerFactory.DEFAULT);
@@ -74,11 +70,8 @@ public class ContinuousTreeController {
 
 		try {
 
-			String token = TokenUtils.getBearerToken(authorizationHeader);
-			logger.log("Received token: " + token, ILogger.INFO);
-
-			String sessionId = TokenUtils.parseJWT(token, secret).get(TokenUtils.SESSION_ID).toString();
-			logger.log("Parsed sessionId: " + sessionId + " from token", ILogger.INFO);
+			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+			String sessionId = getSessionId(authorizationHeader);
 
 			String filename = file.getOriginalFilename();
 			if (storageService.exists(file)) {
@@ -94,6 +87,7 @@ public class ContinuousTreeController {
 
 			RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
 
+			// TODO: repeated atts
 			Set<AttributeEntity> atts = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
 					.flatMap(node -> node.getAttributeNames().stream()).map(name -> {
 						return new AttributeEntity(name, continuousTreeModel);
@@ -538,6 +532,7 @@ public class ContinuousTreeController {
 	}
 
 	private String getSessionId(String authorizationHeader) {
+		String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
 		return TokenUtils.parseJWT(TokenUtils.getBearerToken(authorizationHeader), secret).get(TokenUtils.SESSION_ID)
 				.toString();
 	}
