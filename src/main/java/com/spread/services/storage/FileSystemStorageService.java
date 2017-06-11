@@ -1,18 +1,18 @@
 package com.spread.services.storage;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.stereotype.Service;
-import org.springframework.util.FileSystemUtils;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.stereotype.Service;
+import org.springframework.util.FileSystemUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class FileSystemStorageService implements StorageService {
@@ -35,6 +35,22 @@ public class FileSystemStorageService implements StorageService {
 			isInit = false;
 			throw new StorageException("Could not initialize storage", e);
 		}
+	}
+
+	
+	@Override
+	public boolean exists(MultipartFile file) {
+		String filename = file.getOriginalFilename();
+
+		try {
+
+			Resource resource = new UrlResource(load(filename).toUri());
+			return resource.exists();
+			
+		} catch (MalformedURLException e) {
+			throw new StorageFileNotFoundException("Could not resolve if file: " + filename + " exists.", e);
+		}
+
 	}
 
 	@Override

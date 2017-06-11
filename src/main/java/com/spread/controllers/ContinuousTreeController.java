@@ -1,21 +1,17 @@
 package com.spread.controllers;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,6 +27,7 @@ import com.spread.data.attributable.Area;
 import com.spread.data.attributable.Line;
 import com.spread.data.attributable.Point;
 import com.spread.data.geojson.GeoJsonData;
+import com.spread.domain.AttributeEntity;
 import com.spread.domain.ContinuousTreeModelEntity;
 import com.spread.exceptions.SpreadException;
 import com.spread.loggers.ILogger;
@@ -39,14 +36,17 @@ import com.spread.parsers.ContinuousTreeParser;
 import com.spread.parsers.GeoJSONParser;
 import com.spread.parsers.TimeParser;
 import com.spread.repositories.ContinuousTreeModelRepository;
-import com.spread.services.storage.StorageException;
+import com.spread.repositories.KeyRepository;
 import com.spread.services.storage.StorageService;
+import com.spread.utils.TokenUtils;
 import com.spread.utils.Utils;
 
+import io.jsonwebtoken.SignatureException;
 import jebl.evolution.io.ImportException;
 import jebl.evolution.trees.RootedTree;
 
 @Controller
+@CrossOrigin
 @RequestMapping("/continuous")
 public class ContinuousTreeController {
 
@@ -54,7 +54,10 @@ public class ContinuousTreeController {
 	private final StorageService storageService;
 
 	@Autowired
-	private ContinuousTreeModelRepository repository;
+	private ContinuousTreeModelRepository modelRepository;
+
+	@Autowired
+	private KeyRepository keyRepository;
 
 	public ContinuousTreeController(StorageService storageService) {
 		this.logger = new LoggerFactory().getLogger(LoggerFactory.DEFAULT);
@@ -62,184 +65,343 @@ public class ContinuousTreeController {
 	}
 
 	@RequestMapping(path = "/tree", method = RequestMethod.POST)
-	public ResponseEntity<Object> uploadTree(@RequestParam(value = "treefile", required = true) MultipartFile file) {
+	public ResponseEntity<Object> uploadTree(@RequestHeader(value = "Authorization") String authorizationHeader,
+			@RequestParam(value = "treefile", required = true) MultipartFile file) {
+
 		try {
 
-			// store the file
+			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+			String sessionId = getSessionId(authorizationHeader);
+
+			String filename = file.getOriginalFilename();
+			if (storageService.exists(file)) {
+				storageService.delete(filename);
+				logger.log("Deleting previously uploaded tree file: " + filename, ILogger.INFO);
+			}
+
 			storageService.store(file);
+			logger.log("tree file " + filename + " successfully persisted.", ILogger.INFO);
 
-			ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity();
-			continuousTreeModel.setTreeFilename(
-					storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
-			repository.save(continuousTreeModel);
+			ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity(
+					storageService.loadAsResource(filename).getFile().getAbsolutePath(), sessionId);
 
-			logger.log("tree file successfully persisted.", ILogger.INFO);
+			RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
+
+			Set<AttributeEntity> atts = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
+					.flatMap(node -> node.getAttributeNames().stream()).map(name -> {
+						return new AttributeEntity(name, continuousTreeModel);
+					}).collect(Collectors.toSet());
+
+			continuousTreeModel.setAttributes(atts);
+
+			modelRepository.save(continuousTreeModel);
+
+			logger.log("continuousTreeModelEntity with id " + continuousTreeModel.getId() + " successfully persisted.",
+					ILogger.INFO);
+
+			logger.log(atts.size() + " attributes successfully persisted.", ILogger.INFO);
+
 			return new ResponseEntity<>(HttpStatus.OK);
-
-		} catch (IOException e) {
-			logger.log(e.getMessage(), ILogger.ERROR);
+		} catch (IOException | ImportException e) {
+			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-		} catch (StorageException e) {
-			logger.log(e.getMessage(), ILogger.ERROR);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+		} catch (SignatureException e) {
+			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
 		}
 	}
 
 	@RequestMapping(path = "/tree", method = RequestMethod.DELETE)
-	public ResponseEntity<Void> deleteTree(@RequestParam(value = "treefile", required = true) String filename) {
+	public ResponseEntity<Object> deleteTree(@RequestHeader(value = "Authorization") String authorizationHeader,
+			@RequestParam(value = "treefile", required = true) String filename) {
 
-		// delete the file
-		storageService.delete(filename);
+		try {
 
-		// delete the entity
-		ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
-		repository.delete(continuousTreeModel);
+			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+			String sessionId = getSessionId(authorizationHeader);
 
-		logger.log("tree file successfully deleted.", ILogger.INFO);
-		return new ResponseEntity<>(HttpStatus.OK);
+			// delete the entity
+			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findByTreeFilenameAndSessionId(filename,
+					sessionId);
+			modelRepository.delete(continuousTreeModel);
+
+			// delete the file
+			storageService.delete(filename);
+
+			logger.log("tree file successfully deleted.", ILogger.INFO);
+			return new ResponseEntity<>(HttpStatus.OK);
+		} catch (SignatureException e) {
+			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+		}
 	}
 
 	@RequestMapping(path = "/attributes", method = RequestMethod.GET, produces = "application/json")
-	public ResponseEntity<Set<String>> attributes() throws IOException, ImportException {
+	public ResponseEntity<Set<String>> attributes(@RequestHeader(value = "Authorization") String authorizationHeader)
+			throws IOException, ImportException {
+		try {
 
-		ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
+			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+			String sessionId = getSessionId(authorizationHeader);
 
-		RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
-		Set<String> uniqueAttributes = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
-				.flatMap(node -> node.getAttributeNames().stream()).collect(Collectors.toSet());
+			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
 
-		return ResponseEntity.ok()
-				.header(HttpHeaders.CONTENT_DISPOSITION,
-						"attachment; filename=\"" + continuousTreeModel.getTreeFilename() + "\"")
-				.body(uniqueAttributes);
+			Set<String> uniqueAttributes = continuousTreeModel.getAttributes().stream().map(attribute -> {
+				return attribute.getName();
+			}).collect(Collectors.toSet());
+
+			return ResponseEntity.ok().body(uniqueAttributes);
+		} catch (SignatureException e) {
+			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+			return null;
+		}
 	}
 
-	@RequestMapping(value = { "/coordinates/y", "/coordinates/latitude" }, method = RequestMethod.POST)
-	public ResponseEntity<Void> setyCoordinates(@RequestParam(value = "attribute", required = true) String attribute) {
+	@RequestMapping(path = "/hpd-levels", method = RequestMethod.GET, produces = "application/json")
+	public ResponseEntity<Set<String>> hpdLevels(@RequestHeader(value = "Authorization") String authorizationHeader)
+			throws IOException, ImportException {
 
-		ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
-		continuousTreeModel.setyCoordinate(attribute);
-		repository.save(continuousTreeModel);
+		try {
 
-		logger.log("y coordinate successfully set.", ILogger.INFO);
-		return new ResponseEntity<>(HttpStatus.OK);
-	}
+			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+			String sessionId = getSessionId(authorizationHeader);
 
-	@RequestMapping(value = { "/coordinates/x", "/coordinates/longitude" }, method = RequestMethod.POST)
-	public ResponseEntity<Void> setxCoordinates(@RequestParam(value = "attribute", required = true) String attribute) {
+			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
 
-		ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
-		continuousTreeModel.setxCoordinate(attribute);
-		repository.save(continuousTreeModel);
+			Set<AttributeEntity> attributes = continuousTreeModel.getAttributes();
+			Set<String> hpdLevels = getHpdLevels(attributes);
 
-		logger.log("x coordinate successfully set.", ILogger.INFO);
-		return new ResponseEntity<>(HttpStatus.OK);
-	}
-
-	@RequestMapping(path = "/external-annotations", method = RequestMethod.POST)
-	public ResponseEntity<Void> setHasExternalAnnotations(
-			@RequestParam(value = "has-external-annotations", required = true) Boolean hasExternalAnnotations) {
-
-		ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
-		continuousTreeModel.setHasExternalAnnotations(hasExternalAnnotations);
-		repository.save(continuousTreeModel);
-
-		logger.log("external annotations parameter successfully set.", ILogger.INFO);
-		return new ResponseEntity<>(HttpStatus.OK);
+			return ResponseEntity.ok().body(hpdLevels);
+		} catch (SignatureException e) {
+			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+			return null;
+		}
 	}
 
 	@RequestMapping(path = "/hpd-level", method = RequestMethod.POST)
-	public ResponseEntity<Object> setHpdLevel(@RequestParam(value = "hpd-level", required = true) Double hpdLevel) {
+	public ResponseEntity<Object> setHpdLevel(@RequestHeader(value = "Authorization") String authorizationHeader,
+			@RequestParam(value = "hpd-level", required = true) Double hpdLevel) {
+
 		try {
 
-			checkInterval(hpdLevel, 0.0, 1.0);
+			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+			String sessionId = getSessionId(authorizationHeader);
 
-			ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
-			continuousTreeModel.setHpdLevel(hpdLevel);
-			repository.save(continuousTreeModel);
+			Double min = 0.0;
+			Double max = 1.0;
 
-			logger.log("hpd level parameter successfully set.", ILogger.INFO);
+			if (isInInterval(hpdLevel, min, max)) {
+				ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+				continuousTreeModel.setHpdLevel(hpdLevel);
+				modelRepository.save(continuousTreeModel);
+				logger.log("hpd level parameter successfully set.", ILogger.INFO);
+
+				return new ResponseEntity<>(HttpStatus.OK);
+			} else {
+				String message = "value is outside of permitted interval [" + min + "," + max + "]";
+				logger.log(message, ILogger.ERROR);
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(message);
+			}
+
+		} catch (SignatureException e) {
+			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+		}
+	}
+
+	@RequestMapping(value = { "/coordinates/y", "/coordinates/latitude" }, method = RequestMethod.POST)
+	public ResponseEntity<Object> setyCoordinates(@RequestHeader(value = "Authorization") String authorizationHeader,
+			@RequestParam(value = "attribute", required = true) String attribute) {
+
+		try {
+
+			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+			String sessionId = getSessionId(authorizationHeader);
+
+			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+			continuousTreeModel.setyCoordinate(attribute);
+			modelRepository.save(continuousTreeModel);
+
+			logger.log("y coordinate successfully set.", ILogger.INFO);
 			return new ResponseEntity<>(HttpStatus.OK);
-		} catch (SpreadException e) {
-			logger.log(e.getMessage(), ILogger.ERROR);
-			return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
+		} catch (SignatureException e) {
+			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+		}
+	}
+
+	@RequestMapping(value = { "/coordinates/x", "/coordinates/longitude" }, method = RequestMethod.POST)
+	public ResponseEntity<Object> setxCoordinates(@RequestHeader(value = "Authorization") String authorizationHeader,
+			@RequestParam(value = "attribute", required = true) String attribute) {
+
+		try {
+
+			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+			String sessionId = getSessionId(authorizationHeader);
+
+			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+			continuousTreeModel.setxCoordinate(attribute);
+			modelRepository.save(continuousTreeModel);
+
+			logger.log("x coordinate successfully set.", ILogger.INFO);
+			return new ResponseEntity<>(HttpStatus.OK);
+		} catch (SignatureException e) {
+			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+		}
+	}
+
+	@RequestMapping(path = "/external-annotations", method = RequestMethod.POST)
+	public ResponseEntity<Object> setHasExternalAnnotations(
+			@RequestHeader(value = "Authorization") String authorizationHeader,
+			@RequestParam(value = "has-external-annotations", required = true) Boolean hasExternalAnnotations) {
+
+		try {
+
+			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+			String sessionId = getSessionId(authorizationHeader);
+
+			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+			continuousTreeModel.setHasExternalAnnotations(hasExternalAnnotations);
+			modelRepository.save(continuousTreeModel);
+
+			logger.log("external annotations parameter successfully set.", ILogger.INFO);
+			return new ResponseEntity<>(HttpStatus.OK);
+		} catch (SignatureException e) {
+			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
 		}
 	}
 
 	@RequestMapping(path = "/mrsd", method = RequestMethod.POST)
-	public ResponseEntity<Object> setMrsd(@RequestParam(value = "mrsd") String mrsd) {
+	public ResponseEntity<Object> setMrsd(@RequestHeader(value = "Authorization") String authorizationHeader,
+			@RequestParam(value = "mrsd") String mrsd) {
+
 		try {
 
-			checkIsDate(mrsd);
+			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+			String sessionId = getSessionId(authorizationHeader);
 
-			ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
-			continuousTreeModel.setMrsd(mrsd);
-			repository.save(continuousTreeModel);
+			if (TimeParser.isParseableDate(mrsd)) {
 
-			logger.log("Mrsd parameter successfully set.", ILogger.INFO);
-			return new ResponseEntity<>(HttpStatus.OK);
-		} catch (SpreadException e) {
-			logger.log(e.getMessage(), ILogger.ERROR);
-			return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
+				ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+				continuousTreeModel.setMrsd(mrsd);
+				modelRepository.save(continuousTreeModel);
+
+				logger.log("Mrsd parameter successfully set.", ILogger.INFO);
+				return new ResponseEntity<>(HttpStatus.OK);
+
+			} else {
+				String message = "mrsd parameter is in a wrong format. Use " + "yyyy" + TimeParser.separator + "MM"
+						+ TimeParser.separator + "dd" + " format.";
+				logger.log(message, ILogger.ERROR);
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(message);
+			}
+
+		} catch (SignatureException e) {
+			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
 		}
 	}
 
 	@RequestMapping(path = "/timescale-multiplier", method = RequestMethod.POST)
 	public ResponseEntity<Object> setTimescaleMultiplier(
+			@RequestHeader(value = "Authorization") String authorizationHeader,
 			@RequestParam(value = "timescale-multiplier", required = true) Double timescaleMultiplier) {
 
 		try {
-			checkInterval(timescaleMultiplier, Double.MIN_NORMAL, Double.MAX_VALUE);
 
-			ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
-			continuousTreeModel.setTimescaleMultiplier(timescaleMultiplier);
-			repository.save(continuousTreeModel);
+			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+			String sessionId = getSessionId(authorizationHeader);
 
-			logger.log("timescale multiplier parameter successfully set.", ILogger.INFO);
-			return new ResponseEntity<>(HttpStatus.OK);
-		} catch (SpreadException e) {
-			logger.log(e.getMessage(), ILogger.ERROR);
-			return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
+			Double min = Double.MIN_NORMAL;
+			Double max = Double.MAX_VALUE;
+
+			if (isInInterval(timescaleMultiplier, min, max)) {
+
+				ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+				continuousTreeModel.setTimescaleMultiplier(timescaleMultiplier);
+				modelRepository.save(continuousTreeModel);
+
+				logger.log("timescale multiplier parameter successfully set.", ILogger.INFO);
+				return new ResponseEntity<>(HttpStatus.OK);
+			} else {
+				String message = "value is outside of permitted interval [" + min + "," + max + "]";
+				logger.log(message, ILogger.ERROR);
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(message);
+			}
+
+		} catch (SignatureException e) {
+			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
 		}
 	}
 
 	@RequestMapping(path = "/geojson", method = RequestMethod.POST)
-	public ResponseEntity<Object> uploadGeojson(
+	public ResponseEntity<Object> uploadGeojson(@RequestHeader(value = "Authorization") String authorizationHeader,
 			@RequestParam(value = "geojsonfile", required = true) MultipartFile file) throws IOException {
-
-		storageService.store(file);
-
-		ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
-		continuousTreeModel.setGeojsonFilename(
-				storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
-		repository.save(continuousTreeModel);
-
-		logger.log("geojson file successfully uploaded.", ILogger.INFO);
-
-		return new ResponseEntity<>(HttpStatus.OK);
-	}
-
-	@RequestMapping(path = "/geojson", method = RequestMethod.DELETE)
-	public ResponseEntity<Object> deleteGeojson(@RequestParam(value = "geojsonfile", required = true) String filename)
-			throws IOException {
-
-		storageService.delete(filename);
-
-		ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
-		continuousTreeModel.setGeojsonFilename(null);
-		repository.save(continuousTreeModel);
-
-		logger.log("geojson file successfully deleted.", ILogger.INFO);
-
-		return new ResponseEntity<>(HttpStatus.OK);
-	}
-
-	@RequestMapping(path = "/output", method = RequestMethod.GET, produces = "application/json")
-	public ResponseEntity<Object> getOutput() {
 
 		try {
 
-			ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
+			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+			String sessionId = getSessionId(authorizationHeader);
+
+			String filename = file.getOriginalFilename();
+
+			if (storageService.exists(file)) {
+				storageService.delete(filename);
+				logger.log("Deleting previously uploaded geojson file: " + filename, ILogger.INFO);
+			}
+
+			storageService.store(file);
+
+			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+			continuousTreeModel.setGeojsonFilename(
+					storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
+			modelRepository.save(continuousTreeModel);
+
+			logger.log("geojson file successfully uploaded.", ILogger.INFO);
+
+			return new ResponseEntity<>(HttpStatus.OK);
+		} catch (SignatureException e) {
+			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+		}
+	}
+
+	@RequestMapping(path = "/geojson", method = RequestMethod.DELETE)
+	public ResponseEntity<Object> deleteGeojson(@RequestHeader(value = "Authorization") String authorizationHeader,
+			@RequestParam(value = "geojsonfile", required = true) String filename) throws IOException {
+
+		try {
+
+			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+			String sessionId = getSessionId(authorizationHeader);
+
+			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+			continuousTreeModel.setGeojsonFilename(null);
+			modelRepository.save(continuousTreeModel);
+
+			storageService.delete(filename);
+			logger.log("geojson file successfully deleted.", ILogger.INFO);
+
+			return new ResponseEntity<>(HttpStatus.OK);
+
+		} catch (SignatureException e) {
+			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+		}
+	}
+
+	@RequestMapping(path = "/output", method = RequestMethod.GET, produces = "application/json")
+	public ResponseEntity<Object> getOutput(@RequestHeader(value = "Authorization") String authorizationHeader) {
+
+		try {
+
+			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+			String sessionId = getSessionId(authorizationHeader);
+
+			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
 
 			TimeLine timeLine = null;
 			LinkedList<Attribute> mapAttributes = null;
@@ -322,66 +484,85 @@ public class ContinuousTreeController {
 
 			String json = new GsonBuilder().create().toJson(spreadData);
 
-			// TODO: persists as treefilename.json
-			// TODO: persis in storageDIr
-			String outputFileName = "output.json";
-			FileWriter fw = new FileWriter(new File(outputFileName));
-			fw.write(json);
-			fw.close();
-			FileInputStream input = new FileInputStream(json);
-			MultipartFile file = new MockMultipartFile(outputFileName, outputFileName, "text/plain",
-					IOUtils.toByteArray(input));
-
-			continuousTreeModel.setOutputFilename(
-					storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
-			repository.save(continuousTreeModel);
+			// TODO: persis in storageDir as treefilename.json
+			// String outputFileName = "output.json";
+			// FileWriter fw = new FileWriter(new
+			// File(storageService.getRootLocation() + "/" + outputFileName));
+			// fw.write(json);
+			// fw.close();
+			// FileInputStream input = new FileInputStream(json);
+			// MultipartFile file = new MockMultipartFile(outputFileName,
+			// outputFileName, "text/plain",
+			// IOUtils.toByteArray(input));
+			// storageService.store(file);
+			//
+			// continuousTreeModel.setOutputFilename(
+			// storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
+			// modelRepository.save(continuousTreeModel);
 
 			return ResponseEntity.ok().header(new HttpHeaders().toString()).body(json);
-		} catch (IOException e) {
+		} catch (IOException | ImportException | SpreadException e) {
 			logger.log(e.getMessage(), ILogger.ERROR);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-		} catch (ImportException e) {
-			logger.log(e.getMessage(), ILogger.ERROR);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-		} catch (SpreadException e) {
-			logger.log(e.getMessage(), ILogger.ERROR);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+		} catch (SignatureException e) {
+			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
 		}
-
 	}
 
 	@RequestMapping(path = "/model", method = RequestMethod.GET, produces = "application/json")
-	public ResponseEntity<ContinuousTreeModelEntity> getModel() throws IOException, ImportException {
+	public ResponseEntity<String> getModel(@RequestHeader(value = "Authorization") String authorizationHeader)
+			throws IOException, ImportException {
 
-		ContinuousTreeModelEntity continuousTreeModel = repository.findAll().get(0);
+		try {
 
-		return ResponseEntity.ok().header(new HttpHeaders().toString()).body(continuousTreeModel);
-	}
+			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+			String sessionId = getSessionId(authorizationHeader);
 
-	// TODO: boolean
-	private void checkInterval(Double value, Double min, Double max) throws SpreadException {
-		if (value >= min && value <= max) {
-			return;
-		} else {
-			throw new SpreadException("value is outside of permitted interval [" + min + "," + max + "]");
+			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+
+			// TODO: to JSON
+			return ResponseEntity.ok().header(new HttpHeaders().toString()).body(continuousTreeModel.toString());
+		} catch (SignatureException e) {
+			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
 		}
 	}
 
-	// TODO: boolean, sth like clj-spec
-	private void checkIsDate(String date) throws SpreadException {
-		return;
+	private Set<String> getHpdLevels(Set<AttributeEntity> attributeEntities) {
+
+		Set<String> hpdAttributes = attributeEntities.stream().map(attribute -> {
+			return attribute.getName();
+		}).filter(attributeName -> attributeName.contains("HPD_modality"))
+				.map(hpdString -> hpdString.replaceAll("\\D+", "")).collect(Collectors.toSet());
+
+		return hpdAttributes;
 	}
 
-//	private MultipartFile getMultipartFile(String json, String outputFileName)
-//			throws IOException, FileNotFoundException {
-//		File file = new File(outputFileName);
-//		FileWriter fw = new FileWriter(file);
-//		fw.write(json);
-//		fw.close();
-//		FileInputStream input = new FileInputStream(json);
-//		MultipartFile multipartFile = new MockMultipartFile(outputFileName, outputFileName, "text/plain",
-//				IOUtils.toByteArray(input));
-//		return multipartFile;
-//	}
+	private String getSessionId(String authorizationHeader) {
+		String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+		return TokenUtils.parseJWT(TokenUtils.getBearerToken(authorizationHeader), secret).get(TokenUtils.SESSION_ID)
+				.toString();
+	}
+
+	private Boolean isInInterval(Double value, Double min, Double max) {
+		if (value >= min && value <= max)
+			return true;
+		return false;
+	}
+
+	// private MultipartFile getMultipartFile(String json, String
+	// outputFileName)
+	// throws IOException, FileNotFoundException {
+	// File file = new File(outputFileName);
+	// FileWriter fw = new FileWriter(file);
+	// fw.write(json);
+	// fw.close();
+	// FileInputStream input = new FileInputStream(json);
+	// MultipartFile multipartFile = new MockMultipartFile(outputFileName,
+	// outputFileName, "text/plain",
+	// IOUtils.toByteArray(input));
+	// return multipartFile;
+	// }
 
 }

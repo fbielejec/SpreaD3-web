@@ -12,6 +12,9 @@ import com.spread.loggers.LoggerFactory;
 
 public class TimeParser {
 
+	public static final String separator = "-";
+	private static final String dateRegex = "\\d{4}" + separator + "\\d{2}" + separator + "\\d{2}";
+
 	private final ILogger logger;
 	private String mrsd;
 	private LocalDate endDate;
@@ -21,7 +24,7 @@ public class TimeParser {
 
 		this.logger = new LoggerFactory().getLogger(LoggerFactory.DEFAULT);
 		this.mrsd = mrsd;
-		this.dateFormatter = DateTimeFormat.forPattern("yyyy/MM/dd");
+		this.dateFormatter = DateTimeFormat.forPattern("yyyy" + separator + "MM" + separator + "dd");
 
 		parseTime();
 
@@ -40,7 +43,7 @@ public class TimeParser {
 			int decimalDateSign = 1;
 			if (mrsd.contains(Utils.NEGATIVE_SIGN)) {
 				decimalDateSign = -1;
-				mrsd = mrsd.split("-")[1];
+				mrsd = mrsd.split(separator)[1];
 			}
 
 			endDateFields = convertToYearMonthDay(Double.valueOf(mrsd));
@@ -49,12 +52,12 @@ public class TimeParser {
 			month = Integer.valueOf(endDateFields[Utils.MONTH_INDEX]);
 			day = Integer.valueOf(endDateFields[Utils.DAY_INDEX]);
 
-			logger.log("MRSD in a decimal date format corresponds to yyyy/MM/dd format: " + year + "/" + month
-					+ "/" + day, ILogger.INFO);
+			logger.log("MRSD in a decimal date format corresponds to: " + year + separator + month + separator + day,
+					ILogger.INFO);
 
-		} else if (mrsd.contains("/")) {
+		} else if (mrsd.contains(separator)) {
 
-			endDateFields = mrsd.split("/");
+			endDateFields = mrsd.split(separator);
 			if (endDateFields.length == 3) {
 
 				year = Integer.valueOf(endDateFields[Utils.YEAR_INDEX]);
@@ -74,7 +77,7 @@ public class TimeParser {
 				throw new SpreadException("Unrecognised date format " + this.mrsd);
 			}
 
-			logger.log("MRSD is in yyyy/MM/dd format : " + year + "/" + month + "/" + day, ILogger.INFO);
+			logger.log("MRSD is : " + year + separator + month + separator + day, ILogger.INFO);
 
 		} else {
 			throw new SpreadException("Unrecognised MRSD format " + this.mrsd);
@@ -115,6 +118,10 @@ public class TimeParser {
 		return stringDate;
 	}
 
+	public static Boolean isParseableDate(String dateString) {
+		return dateString.matches(dateRegex);
+	}
+	
 	public String[] convertToYearMonthDay(double fractionalDate) {
 
 		String[] yearMonthDay = new String[3];
