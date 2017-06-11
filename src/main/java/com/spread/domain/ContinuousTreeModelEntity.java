@@ -20,12 +20,12 @@ public class ContinuousTreeModelEntity {
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private Integer id;
 
-	@Column(name = "tree_filename", nullable = false)
-	private String treeFilename;
-
 	@Column(name = "session_id", nullable = false)
 	private String sessionId;
 	
+	@Column(name = "tree_filename", nullable = false)
+	private String treeFilename;
+
 	@Column(name = "x_coordinate", nullable = true)
 	private String xCoordinate; // long
 
@@ -53,17 +53,32 @@ public class ContinuousTreeModelEntity {
 	@OneToMany(mappedBy = "tree", cascade = CascadeType.ALL)
 	private Set<AttributeEntity> attributes;
 
+	public ContinuousTreeModelEntity() {
+	}
+	
 	public ContinuousTreeModelEntity(String absolutePath, String sessionId) {
 		this.treeFilename = absolutePath;
 		this.sessionId = sessionId;
 	}
 
+	public Integer getId() {
+		return this.id;
+	}
+	
 	public String getSessionId() {
 		return sessionId;
 	}
 
 	public void setSessionId(String sessionId) {
 		this.sessionId = sessionId;
+	}
+	
+	public String getTreeFilename() {
+		return treeFilename;
+	}
+
+	public void setTreeFilename(String treeFilename) {
+		this.treeFilename = treeFilename;
 	}
 	
 	public Set<AttributeEntity> getAttributes() {
@@ -74,10 +89,6 @@ public class ContinuousTreeModelEntity {
 		this.attributes = attributes;
 	}
 
-	public Integer getId() {
-		return this.id;
-	}
-	
 	public String getxCoordinate() {
 		return xCoordinate;
 	}
@@ -140,14 +151,6 @@ public class ContinuousTreeModelEntity {
 
 	public void setHasExternalAnnotations(boolean hasExternalAnnotations) {
 		this.hasExternalAnnotations = hasExternalAnnotations;
-	}
-
-	public String getTreeFilename() {
-		return treeFilename;
-	}
-
-	public void setTreeFilename(String treeFilename) {
-		this.treeFilename = treeFilename;
 	}
 
 }

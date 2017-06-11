@@ -20,17 +20,16 @@ import com.spread.utils.TokenUtils;
 @CrossOrigin
 public class TokenController {
 
+	// TODO: persist secret on applications start
 	@Value("${secret}")
 	private String secret;
 
-//	private static final String SESSION_ID = "session_id";
 	private final ILogger logger;
 
 	public TokenController() {
 		this.logger = new LoggerFactory().getLogger(LoggerFactory.DEFAULT);
 	}
 
-	// TODO: persist key on applications start
 	@RequestMapping(path = "/token", method = RequestMethod.GET)
 	public ResponseEntity<Object> respondWithToken() {
 
