@@ -29,6 +29,7 @@ import com.spread.data.attributable.Point;
 import com.spread.data.geojson.GeoJsonData;
 import com.spread.domain.AttributeEntity;
 import com.spread.domain.ContinuousTreeModelEntity;
+import com.spread.domain.SessionEntity;
 import com.spread.exceptions.SpreadException;
 import com.spread.loggers.ILogger;
 import com.spread.loggers.LoggerFactory;
@@ -83,7 +84,8 @@ public class ContinuousTreeController {
 			logger.log("tree file " + filename + " successfully persisted.", ILogger.INFO);
 
 			ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity(
-					storageService.loadAsResource(filename).getFile().getAbsolutePath(), sessionId);
+					storageService.loadAsResource(filename).getFile().getAbsolutePath(), 
+					new SessionEntity(sessionId));
 
 			RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
 

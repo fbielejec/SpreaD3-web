@@ -4,16 +4,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
 import com.spread.domain.KeyEntity;
 import com.spread.repositories.KeyRepository;
-import com.spread.services.storage.StorageProperties;
 import com.spread.services.storage.StorageService;
 
 @SpringBootApplication
-@EnableConfigurationProperties(StorageProperties.class)
 public class App {
 
 	@Value("${secret}")
@@ -25,11 +22,8 @@ public class App {
 
 	@Bean
 	CommandLineRunner init(StorageService storageService, KeyRepository keyRepository) {
-
 		return (args) -> {
-			
 			keyRepository.save(new KeyEntity(secret));
-			
 			storageService.deleteAll();
 			storageService.init();
 		};

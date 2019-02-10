@@ -5,9 +5,9 @@
 	<packaging>jar</packaging>
 
 	<groupId>com.spread</groupId>
-	<artifactId>spread3-web</artifactId>
+	<artifactId>spread-server</artifactId>
 	<version>0.0.1</version>
-	<name>spread3-web</name>
+	<name>spread-server</name>
 	<url>http://maven.apache.org</url>
 
 	<properties>
