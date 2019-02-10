@@ -1,5 +1,6 @@
 package com.spread.services.storage;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -18,12 +19,12 @@ public class FileSystemStorageService implements StorageService {
 
 	@Value("${storage.location}")
 	private Path rootLocation;
-	
+
 	private Boolean isInit = false;	
 
 	@Override
 	public void init() {
-		
+
 		try {
 			Files.createDirectory(rootLocation);
 			isInit = true;
@@ -33,16 +34,22 @@ public class FileSystemStorageService implements StorageService {
 		}
 	}
 
-	
 	@Override
 	public boolean exists(MultipartFile file) {
+		return exists(null, file);
+	}
+
+	@Override
+	public boolean exists(String subdirectory, MultipartFile file) {
+
 		String filename = file.getOriginalFilename();
 
 		try {
 
-			Resource resource = new UrlResource(load(filename).toUri());
+			Path path = (subdirectory == null) ? load(filename) : load(subdirectory, filename);			
+			Resource resource = new UrlResource(path.toUri());
 			return resource.exists();
-			
+
 		} catch (MalformedURLException e) {
 			throw new StorageFileNotFoundException("Could not resolve if file: " + filename + " exists.", e);
 		}
@@ -50,36 +57,73 @@ public class FileSystemStorageService implements StorageService {
 	}
 
 	@Override
-	public void store(MultipartFile file) {
+	public void store(MultipartFile file) {		
+		store(null, file);		
+	}
+
+	@Override
+	public void store(String subdirectory, MultipartFile file) throws StorageException {
+		String filename = file.getOriginalFilename();
 		try {
+
 			if (file.isEmpty()) {
-				throw new StorageException("Failed to store empty file " + file.getOriginalFilename());
+				throw new StorageException("Failed to store empty file " + filename);
 			}
-			Files.copy(file.getInputStream(), this.rootLocation.resolve(file.getOriginalFilename()));
-		} catch (IOException e) {
-			throw new StorageException("Failed to store file " + file.getOriginalFilename(), e);
+
+			if(subdirectory == null) {
+				Files.copy(file.getInputStream(), this.rootLocation.resolve(filename));
+			} else {
+				Path childLocation = rootLocation.resolve(subdirectory);
+				//				Files.createDirectory(childLocation);
+				Files.copy(file.getInputStream(), childLocation.resolve(filename));
+			}
+
+		} catch (IOException e) {				
+			throw new StorageException("Failed to store file " + file.getOriginalFilename(), e);				
 		}
+
 	}
 
 	@Override
 	public Path load(String filename) {
-		return rootLocation.resolve(filename);
+		return load(null, filename);
+	}
+
+	@Override
+	public Path load(String subdirectory, String filename) {		
+
+		if(subdirectory == null) {
+			return rootLocation.resolve(filename);
+		}
+
+		Path childLocation = rootLocation.resolve(subdirectory);					
+		return childLocation.resolve(filename);
 	}
 
 	@Override
 	public Resource loadAsResource(String filename) {
+		return loadAsResource(null, filename);
+	}
+
+	@Override
+	public Resource loadAsResource(String subdirectory, String filename) {
+
 		try {
-			Path file = load(filename);
+
+			Path file = (subdirectory == null) ? load(filename) : load(subdirectory, filename);
+
 			Resource resource = new UrlResource(file.toUri());
 			if (resource.exists() || resource.isReadable()) {
 				return resource;
 			} else {
 				throw new StorageFileNotFoundException("Could not read file: " + filename);
 
-			}
+			}	
+
 		} catch (MalformedURLException e) {
 			throw new StorageFileNotFoundException("Could not read file: " + filename, e);
 		}
+
 	}
 
 	@Override
@@ -95,8 +139,15 @@ public class FileSystemStorageService implements StorageService {
 
 	@Override
 	public void delete(String filename) {
-		FileSystemUtils.deleteRecursively(load(filename).toFile());
+		delete(null, filename);
 	}
+
+	@Override
+	public void delete(String subdirectory, String filename) {
+		Path path = (subdirectory == null) ? load(filename) : load(subdirectory, filename);			
+		FileSystemUtils.deleteRecursively(path.toFile());		
+	}
+
 
 	@Override
 	public void deleteAll() {
@@ -111,6 +162,30 @@ public class FileSystemStorageService implements StorageService {
 	@Override
 	public Path getRootLocation() {
 		return rootLocation;
+	}
+
+	@Override
+	public boolean directoryExists(Path location) {
+		File directory = location.toFile(); 
+		return directory.exists();
+	}
+
+	@Override
+	public void createSubdirectory(String subdirectory) {
+		try {		
+
+			Path childLocation = rootLocation.resolve(subdirectory);				
+			Files.createDirectory(childLocation);
+			
+		} catch (IOException e) {
+			throw new StorageException("Failed to create subdirectory: " + subdirectory, e);					
+		}		
+	}
+
+	@Override
+	public void deleteSubdirectory(String subdirectory) {
+		Path childLocation = rootLocation.resolve(subdirectory);
+		FileSystemUtils.deleteRecursively(childLocation.toFile());		
 	}
 
 }

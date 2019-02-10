@@ -65,6 +65,11 @@ public class ContinuousTreeController {
 		this.storageService = storageService;
 	}
 
+	/*
+	 * This path creates the entity
+	 * Reuploading tree file with the same sessionId is not possible
+	 * clients carrying the token should first delete the entity by calling the corresponding endpoint and ask for a new token. 
+	 * */
 	@RequestMapping(path = "/tree", method = RequestMethod.POST)
 	public ResponseEntity<Object> uploadTree(@RequestHeader(value = "Authorization") String authorizationHeader,
 			@RequestParam(value = "treefile", required = true) MultipartFile file) {
@@ -74,17 +79,23 @@ public class ContinuousTreeController {
 			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
 			String sessionId = getSessionId(authorizationHeader);
 
-			String filename = file.getOriginalFilename();
-			if (storageService.exists(file)) {
-				storageService.delete(filename);
-				logger.log("Deleting previously uploaded tree file: " + filename, ILogger.INFO);
-			}
+			if(!(modelRepository.findBySessionId(sessionId) == null)) {
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Session with that id already exists.");
+			};
+			// reaupload not possible, just redo the analysis
+			//			if (storageService.exists(sessionId, file)) {
+			//				storageService.delete(sessionId, filename);
+			//				logger.log("Deleting previously uploaded tree file: " + filename, ILogger.INFO);
+			//			}
 
-			storageService.store(file);
+			String filename = file.getOriginalFilename();		
+
+			storageService.createSubdirectory(sessionId);
+			storageService.store(sessionId, file);
 			logger.log("tree file " + filename + " successfully persisted.", ILogger.INFO);
 
 			ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity(
-					storageService.loadAsResource(filename).getFile().getAbsolutePath(), 
+					storageService.loadAsResource(sessionId, filename).getFile().getAbsolutePath(), 
 					new SessionEntity(sessionId));
 
 			RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
@@ -113,9 +124,12 @@ public class ContinuousTreeController {
 		}
 	}
 
+	// TODO : test when no session with that id (client carries stale JWT token)
+	// TODO : cascading delete on sessions !
 	@RequestMapping(path = "/tree", method = RequestMethod.DELETE)
-	public ResponseEntity<Object> deleteTree(@RequestHeader(value = "Authorization") String authorizationHeader,
-			@RequestParam(value = "treefile", required = true) String filename) {
+	public ResponseEntity<Object> deleteTree(@RequestHeader(value = "Authorization") String authorizationHeader
+			//			,@RequestParam(value = "treefile", required = true) String filename
+			) {
 
 		try {
 
@@ -123,14 +137,16 @@ public class ContinuousTreeController {
 			String sessionId = getSessionId(authorizationHeader);
 
 			// delete the entity
-			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findByTreeFilenameAndSessionId(filename,
-					sessionId);
+			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
 			modelRepository.delete(continuousTreeModel);
 
-			// delete the file
-			storageService.delete(filename);
+			storageService.deleteSubdirectory(sessionId);
 
 			logger.log("tree file successfully deleted.", ILogger.INFO);
+
+			logger.log("continuousTreeModelEntity with id " + sessionId + " successfully deleted.",
+					ILogger.INFO);
+
 			return new ResponseEntity<>(HttpStatus.OK);
 		} catch (SignatureException e) {
 			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
@@ -350,12 +366,12 @@ public class ContinuousTreeController {
 
 			String filename = file.getOriginalFilename();
 
-			if (storageService.exists(file)) {
-				storageService.delete(filename);
+			if (storageService.exists(sessionId, file)) {
+				storageService.delete(sessionId, filename);
 				logger.log("Deleting previously uploaded geojson file: " + filename, ILogger.INFO);
 			}
 
-			storageService.store(file);
+			storageService.store(sessionId, file);
 
 			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
 			continuousTreeModel.setGeojsonFilename(
@@ -371,29 +387,29 @@ public class ContinuousTreeController {
 		}
 	}
 
-	@RequestMapping(path = "/geojson", method = RequestMethod.DELETE)
-	public ResponseEntity<Object> deleteGeojson(@RequestHeader(value = "Authorization") String authorizationHeader,
-			@RequestParam(value = "geojsonfile", required = true) String filename) throws IOException {
-
-		try {
-
-			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
-			String sessionId = getSessionId(authorizationHeader);
-
-			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
-			continuousTreeModel.setGeojsonFilename(null);
-			modelRepository.save(continuousTreeModel);
-
-			storageService.delete(filename);
-			logger.log("geojson file successfully deleted.", ILogger.INFO);
-
-			return new ResponseEntity<>(HttpStatus.OK);
-
-		} catch (SignatureException e) {
-			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-		}
-	}
+	//	@RequestMapping(path = "/geojson", method = RequestMethod.DELETE)
+	//	public ResponseEntity<Object> deleteGeojson(@RequestHeader(value = "Authorization") String authorizationHeader,
+	//			@RequestParam(value = "geojsonfile", required = true) String filename) throws IOException {
+	//
+	//		try {
+	//
+	//			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+	//			String sessionId = getSessionId(authorizationHeader);
+	//
+	//			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+	//			continuousTreeModel.setGeojsonFilename(null);
+	//			modelRepository.save(continuousTreeModel);
+	//
+	//			storageService.delete(filename);
+	//			logger.log("geojson file successfully deleted.", ILogger.INFO);
+	//
+	//			return new ResponseEntity<>(HttpStatus.OK);
+	//
+	//		} catch (SignatureException e) {
+	//			logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+	//			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+	//		}
+	//	}
 
 	@RequestMapping(path = "/output", method = RequestMethod.GET, produces = "application/json")
 	public ResponseEntity<Object> getOutput(@RequestHeader(value = "Authorization") String authorizationHeader) {

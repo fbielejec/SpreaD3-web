@@ -14,18 +14,34 @@ public interface StorageService {
     
     boolean exists(MultipartFile file);
     
+    boolean exists(String subdirectory, MultipartFile file);
+    
     void store(MultipartFile file) throws StorageException;
 
-    Stream<Path> loadAll();
-
+    void store(String subdirectory, MultipartFile file) throws StorageException;
+    
     Path load(String filename);
 
+    Path load(String subdirectory, String filename);
+    
     Resource loadAsResource(String filename);
 
+    Resource loadAsResource(String subdirectory, String filename);
+    
     void delete(String filename);
+
+    void delete(String subdirectory, String filename);
     
     void deleteAll();
 
     Path getRootLocation();
+    
+    Stream<Path> loadAll();
+
+	void createSubdirectory(String subdirectory);
+
+	void deleteSubdirectory(String subdirectory);
+	
+	boolean directoryExists(Path location);
     
 }

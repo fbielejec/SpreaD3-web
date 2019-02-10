@@ -22,8 +22,9 @@ public class ContinuousTreeModelEntity {
 	@Column(name = "id", nullable = false)
 	private String sessionId;
 
-	// use primary key of Session as the id
-	@OneToOne
+	// use primary key of Session as the id	
+	// delete corresponding session
+	@OneToOne(cascade=CascadeType.ALL)
 	@JoinColumn(name = "id")
 	@MapsId
 	private SessionEntity session;
