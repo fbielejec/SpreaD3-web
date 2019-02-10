@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/phylogeography/spreaD3-web.svg?branch=master)](https://travis-ci.org/phylogeography/spreaD3-web) [![codecov.io](https://codecov.io/gh/phylogeography/SpreaD3-web/coverage.svg?branch=master)](https://codecov.io/gh/phylogeography/spreaD3-web?branch=master)
+[![Build Status](https://travis-ci.org/fbielejec/spread-server.svg?branch=master)](https://travis-ci.org/fbielejec/spread-server) [![codecov.io](https://codecov.io/gh/fbielejec/spread-server/coverage.svg?branch=master)](https://codecov.io/gh/fbielejec/spread-server?branch=master)
 
 .:: SpreaD3-web ::.
 ===================
