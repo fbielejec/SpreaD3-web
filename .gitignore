@@ -3,4 +3,5 @@ upload-dir/
 .settings/
 .classpath
 .project
+.factorypath
 other/
