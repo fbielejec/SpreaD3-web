@@ -5,7 +5,7 @@ PORT=4000
 # GET jwt token
 TOKEN=$(curl -X GET http://localhost:$PORT/token |  jq -r '.token')
 
-# TOKEN=eyJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE1NDk4MTc3ODUsInNlc3Npb25faWQiOiJlMzBlZmI5Yi00NzgwLTQ4YTMtOGM3MS02ZjZlMDIyOTRjODYifQ.aumP1PdJGvUPQ82rSB-30Uasf3Q-UETfd8P6Knus0f4B3vyrrikdeC0pnbTdOHmfQ2aX4nzoIXfGe2ekWx_OVQ
+#TOKEN=eyJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE1NDk5MTYyOTQsInNlc3Npb25faWQiOiI4YzA4OWEwOS0wMWZiLTRjMDktYmU3MS1mNTc1YzgzOTM1YWQifQ.K5drhrP53FCBxRx2Qa6GGFYhzCklsdbldxkYz5_BsXr7XUuH7JebCGbIk3bBskJx3IlujsYo_TGgi9w1-k-cvQ
 
 # POST tree file, persists new entity
 curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: multipart/form-data" -F "treefile=@/home/filip/Dropbox/JavaProjects/spread-server/src/test/resources/continuous/speciesDiffusion.MCC.tre" http://localhost:$PORT/continuous/tree
@@ -55,7 +55,7 @@ curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/
 
 echo -e '\n'
 
-# queue the output job 
+# queue the output job
 curl -X PUT -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/output
 
 # poll status
@@ -71,10 +71,31 @@ curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/
 
 echo -e '\n'
 
-# TODO 
-# curl -v -X PUT -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/ipfs
+# publish to ipfs
+curl -X PUT -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/ipfs
 
-# TODO
-# curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/ipfs
+# get ipfs hash
+curl -v -X GET -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/ipfs
+
+echo -e '\n'
+
+# poll status
+curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/status
+
+echo -e '\n'
+
+# Waits 0.5 second
+sleep .5
+
+# poll status
+curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/status
+
+echo -e '\n'
+
+# get ipfs hash
+HASH=$(curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/ipfs)
+
+# retrieve content
+curl -X GET http://127.0.0.1:8080/ipfs/$HASH
 
 echo -e '\n'

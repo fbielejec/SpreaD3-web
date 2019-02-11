@@ -28,6 +28,7 @@ import com.spread.parsers.GeoJSONParser;
 import com.spread.parsers.TimeParser;
 import com.spread.repositories.ContinuousTreeModelRepository;
 import com.spread.repositories.KeyRepository;
+import com.spread.services.ipfs.IpfsService;
 import com.spread.services.storage.StorageService;
 import com.spread.utils.TokenUtils;
 import com.spread.utils.Utils;
@@ -55,6 +56,9 @@ public class ContinuousTreeController {
 
     private final ILogger logger;
     private final StorageService storageService;
+
+    @Autowired
+    private IpfsService ipfsService;
 
     @Autowired
     private ContinuousTreeModelRepository modelRepository;
@@ -130,8 +134,6 @@ public class ContinuousTreeController {
         }
     }
 
-    // TODO will throw when no session with that id exists (client carries stale JWT token).
-    // Return meaningfull message in the response
     @RequestMapping(path = "/tree", method = RequestMethod.DELETE)
     public ResponseEntity<Object> deleteTree(@RequestHeader(value = "Authorization") String authorizationHeader) {
 
@@ -142,6 +144,7 @@ public class ContinuousTreeController {
 
             // delete the entity
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+
             modelRepository.delete(continuousTreeModel);
 
             storageService.deleteSubdirectory(sessionId);
@@ -359,7 +362,7 @@ public class ContinuousTreeController {
 
     @RequestMapping(path = "/geojson", method = RequestMethod.PUT)
     public ResponseEntity<Object> uploadGeojson(@RequestHeader(value = "Authorization") String authorizationHeader,
-                                                @RequestParam(value = "geojsonfile", required = true) MultipartFile file) throws IOException {
+                                                @RequestParam(value = "geojsonfile", required = true) MultipartFile file)  {
 
         try {
 
@@ -390,6 +393,9 @@ public class ContinuousTreeController {
         } catch (SignatureException e) {
             logger.log(Utils.getStackTrace(e), ILogger.ERROR);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (IOException e) {
+            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
@@ -468,9 +474,79 @@ public class ContinuousTreeController {
         }
     }
 
+    @RequestMapping(path = "/ipfs", method = RequestMethod.PUT, produces = "application/json")
+    public ResponseEntity<Object> putIpfs(@RequestHeader(value = "Authorization") String authorizationHeader) {
+        try {
+
+            logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+            String sessionId = getSessionId(authorizationHeader);
+
+            ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+
+            // run in background
+            taskExecutor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+
+                            // TODO : copy spread-visualization
+
+                            logger.log("Publishing to ipfs" , ILogger.INFO);
+
+                            String hash = ipfsService.addDirectory(storageService.getSubdirectoryLocation(sessionId));
+
+                            continuousTreeModel.setIpfsHash(hash);
+                            continuousTreeModel.setStatus(ContinuousTreeModelEntity.Status.IPFS_HASH_READY);
+                            modelRepository.save(continuousTreeModel);
+
+                            logger.log("Published to Ipfs with hash: " + hash , ILogger.INFO);
+                        } catch (IOException e) {
+                            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+                        }
+                    }
+                });
+
+            continuousTreeModel.setStatus(ContinuousTreeModelEntity.Status.PUBLISHING_IPFS);
+            modelRepository.save(continuousTreeModel);
+
+            // return immediately
+            HttpHeaders responseHeaders = new HttpHeaders();
+            responseHeaders.set("Location", sessionId);
+            return new ResponseEntity<>(responseHeaders, HttpStatus.ACCEPTED);
+        } catch (SignatureException e) {
+            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
+    }
+
+    @RequestMapping(path = "/ipfs", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<String> getIpfsHash(@RequestHeader(value = "Authorization") String authorizationHeader) {
+
+        try {
+
+            logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+            String sessionId = getSessionId(authorizationHeader);
+
+            ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+
+            if(continuousTreeModel.getStatus() == ContinuousTreeModelEntity.Status.IPFS_HASH_READY) {
+                return ResponseEntity.ok().header(new HttpHeaders().toString()).body(continuousTreeModel.getIpfsHash().toString());
+            } else {
+                // client should poll
+                HttpHeaders responseHeaders = new HttpHeaders();
+                responseHeaders.set("Location", "/continuous/status");
+                return new ResponseEntity<>(responseHeaders, HttpStatus.SEE_OTHER);
+            }
+
+        } catch (SignatureException e) {
+            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
+    }
+
     @RequestMapping(path = "/status", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<String> getStatus(@RequestHeader(value = "Authorization") String authorizationHeader)
-        throws IOException, ImportException {
+    {
 
         try {
 
@@ -485,11 +561,11 @@ public class ContinuousTreeController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
-    
+
     // TODO : return entity in JSON
     @RequestMapping(path = "/model", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<String> getModel(@RequestHeader(value = "Authorization") String authorizationHeader)
-        throws IOException, ImportException {
+    {
 
         try {
 
@@ -506,8 +582,6 @@ public class ContinuousTreeController {
         }
     }
 
-
-    
     private String doGenerateOutput (ContinuousTreeModelEntity continuousTreeModel) throws IOException, ImportException, SpreadException {
 
         TimeLine timeLine = null;

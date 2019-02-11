@@ -4,6 +4,7 @@ import java.util.concurrent.Executor;
 
 import com.spread.domain.KeyEntity;
 import com.spread.repositories.KeyRepository;
+import com.spread.services.ipfs.IpfsService;
 import com.spread.services.storage.StorageService;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -26,11 +27,14 @@ public class App {
     }
 
     @Bean
-    CommandLineRunner init(StorageService storageService, KeyRepository keyRepository) {
+    CommandLineRunner init(StorageService storageService,
+                           KeyRepository keyRepository,
+                           IpfsService ipfsService) {
         return (args) -> {
             keyRepository.save(new KeyEntity(secret));
             storageService.deleteAll();
             storageService.init();
+            ipfsService.init();
         };
     }
 
