@@ -5,18 +5,6 @@ import java.util.LinkedList;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.multipart.MultipartFile;
-
 import com.google.gson.GsonBuilder;
 import com.spread.data.Attribute;
 import com.spread.data.AxisAttributes;
@@ -41,6 +29,18 @@ import com.spread.repositories.KeyRepository;
 import com.spread.services.storage.StorageService;
 import com.spread.utils.TokenUtils;
 import com.spread.utils.Utils;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 import io.jsonwebtoken.SignatureException;
 import jebl.evolution.io.ImportException;
@@ -124,12 +124,10 @@ public class ContinuousTreeController {
 		}
 	}
 
-	// TODO : test when no session with that id (client carries stale JWT token)
-	// TODO : cascading delete on sessions !
+	// TODO will throw when no session with that id exists (client carries stale JWT token). 
+	// Return meaningfull message in the response
 	@RequestMapping(path = "/tree", method = RequestMethod.DELETE)
-	public ResponseEntity<Object> deleteTree(@RequestHeader(value = "Authorization") String authorizationHeader
-			//			,@RequestParam(value = "treefile", required = true) String filename
-			) {
+	public ResponseEntity<Object> deleteTree(@RequestHeader(value = "Authorization") String authorizationHeader) {
 
 		try {
 
@@ -362,20 +360,20 @@ public class ContinuousTreeController {
 		try {
 
 			logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
-			String sessionId = getSessionId(authorizationHeader);
 
+			String sessionId = getSessionId(authorizationHeader);
 			String filename = file.getOriginalFilename();
 
 			if (storageService.exists(sessionId, file)) {
 				storageService.delete(sessionId, filename);
 				logger.log("Deleting previously uploaded geojson file: " + filename, ILogger.INFO);
 			}
-
+                        
 			storageService.store(sessionId, file);
 
 			ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
 			continuousTreeModel.setGeojsonFilename(
-					storageService.loadAsResource(file.getOriginalFilename()).getFile().getAbsolutePath());
+					storageService.loadAsResource(sessionId, filename).getFile().getAbsolutePath());
 			modelRepository.save(continuousTreeModel);
 
 			logger.log("geojson file successfully uploaded.", ILogger.INFO);
