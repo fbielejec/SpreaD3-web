@@ -145,6 +145,11 @@ public class ContinuousTreeController {
             // delete the entity
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
 
+            if(continuousTreeModel == null) {
+                logger.log("No content with that session id: "+ sessionId, ILogger.INFO);
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
             modelRepository.delete(continuousTreeModel);
 
             storageService.deleteSubdirectory(sessionId);

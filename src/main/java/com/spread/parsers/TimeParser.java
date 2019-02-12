@@ -1,18 +1,18 @@
 package com.spread.parsers;
 
+import com.spread.data.TimeLine;
+import com.spread.exceptions.SpreadException;
+import com.spread.loggers.ILogger;
+import com.spread.loggers.LoggerFactory;
+import com.spread.utils.Utils;
+
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
-import com.spread.data.TimeLine;
-import com.spread.utils.Utils;
-import com.spread.exceptions.SpreadException;
-import com.spread.loggers.ILogger;
-import com.spread.loggers.LoggerFactory;
-
 public class TimeParser {
 
-	public static final String separator = "-";
+	public static final String separator = "/";
 	private static final String dateRegex = "\\d{4}" + separator + "\\d{2}" + separator + "\\d{2}";
 
 	private final ILogger logger;
