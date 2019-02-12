@@ -44,7 +44,7 @@ public class ContinuousTreeModelEntity {
     private String yCoordinate; // lat
 
     @Column(name = "hpd_level", nullable = true)
-    private Double hpdLevel;
+    private Integer hpdLevel;
 
     @Column(name = "mrsd", nullable = true)
     private String mrsd;
@@ -114,11 +114,11 @@ public class ContinuousTreeModelEntity {
         this.yCoordinate = yCoordinate;
     }
 
-    public Double getHpdLevel() {
+    public Integer getHpdLevel() {
         return hpdLevel;
     }
 
-    public void setHpdLevel(Double hpdLevel) {
+    public void setHpdLevel(Integer hpdLevel) {
         this.hpdLevel = hpdLevel;
     }
 

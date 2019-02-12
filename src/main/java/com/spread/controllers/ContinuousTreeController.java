@@ -210,13 +210,13 @@ public class ContinuousTreeController {
 
     @RequestMapping(path = "/hpd-level", method = RequestMethod.PUT)
     public ResponseEntity<Object> setHpdLevel(@RequestHeader(value = "Authorization") String authorizationHeader,
-                                              @RequestParam(value = "hpd-level", required = true) Double hpdLevel) {
+                                              @RequestParam(value = "hpd-level", required = true) Integer hpdLevel) {
         try {
             logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
             String sessionId = getSessionId(authorizationHeader);
 
-            Double min = 0.0;
-            Double max = 1.0;
+            Integer min = 0;
+            Integer max = 100;
 
             if (isInInterval(hpdLevel, min, max)) {
                 ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
@@ -688,6 +688,12 @@ public class ContinuousTreeController {
     }
 
     private Boolean isInInterval(Double value, Double min, Double max) {
+        if (value >= min && value <= max)
+            return true;
+        return false;
+    }
+
+    private Boolean isInInterval(Integer value, Integer min, Integer max) {
         if (value >= min && value <= max)
             return true;
         return false;

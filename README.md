@@ -3,13 +3,12 @@
 .:: SpreaD3-web ::.
 ===================
 
-*Spatial Phylogenetic Reconstruction of Evolutionary Dynamics - web service* <br />
+*Spatial Phylogenetic Reconstruction of Evolutionary Dynamics - REST api* <br />
 Version: 0.0.1, 2017 <br />
 Author: Filip Bielejec <br />
 
 ## PURPOSE
 REST Web Services to SpreaD3, capable of generating links with on-line visualisations.
-
 
 ## LICENSE
   This is free software; you can redistribute it and/or modify 
@@ -30,9 +29,9 @@ mvn test
 
 mvn spring-boot:run
 
-# Embedded database console (url: jdbc:h2:~/test username: test password: test) 
+### Embedded database console (url: jdbc:h2:~/test username: test password: test) 
 http://localhost:4000/h2-console/
- 
+
 ## Production
 
 mvn clean package && java -jar target/spread3-web-0.0.1.jar
