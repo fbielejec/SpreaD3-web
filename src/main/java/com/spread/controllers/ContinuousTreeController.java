@@ -1,7 +1,7 @@
 package com.spread.controllers;
 
 import java.io.IOException;
-import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -30,6 +30,7 @@ import com.spread.repositories.ContinuousTreeModelRepository;
 import com.spread.repositories.KeyRepository;
 import com.spread.services.ipfs.IpfsService;
 import com.spread.services.storage.StorageService;
+import com.spread.services.visualization.VisualizationService;
 import com.spread.utils.TokenUtils;
 import com.spread.utils.Utils;
 
@@ -68,6 +69,9 @@ public class ContinuousTreeController {
 
     @Autowired
     private Executor taskExecutor;
+
+    @Autowired
+    private VisualizationService visualizationService;
 
     public ContinuousTreeController(StorageService storageService) {
         this.logger = new LoggerFactory().getLogger(LoggerFactory.DEFAULT);
@@ -449,7 +453,8 @@ public class ContinuousTreeController {
 
                             String json = doGenerateOutput(continuousTreeModel);
                             // persist in storageDir as data.json
-                            Files.write(storageService.getSubdirectoryLocation(sessionId).resolve("data.json"), json.getBytes());
+                            storageService.store(sessionId, "data.json", json.getBytes());
+
                             // update model
                             continuousTreeModel.setOutputFilename(storageService.loadAsResource(sessionId, "data.json").getFile().getAbsolutePath());
                             continuousTreeModel.setStatus(ContinuousTreeModelEntity.Status.OUTPUT_READY);
@@ -494,12 +499,13 @@ public class ContinuousTreeController {
                     public void run() {
                         try {
 
-                            // TODO : copy spread-visualization
+                            logger.log("Copying visualisation" , ILogger.INFO);
+                            Path source = visualizationService.getVisualisationDirectory();
+                            storageService.copy(sessionId, source);
+                            logger.log("Copied visualisation from " + source.toString() + " to " + sessionId , ILogger.INFO);
 
                             logger.log("Publishing to ipfs" , ILogger.INFO);
-
                             String hash = ipfsService.addDirectory(storageService.getSubdirectoryLocation(sessionId));
-
                             continuousTreeModel.setIpfsHash(hash);
                             continuousTreeModel.setStatus(ContinuousTreeModelEntity.Status.IPFS_HASH_READY);
                             modelRepository.save(continuousTreeModel);

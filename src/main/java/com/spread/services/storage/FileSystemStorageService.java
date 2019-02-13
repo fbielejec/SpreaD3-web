@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -24,7 +25,6 @@ public class FileSystemStorageService implements StorageService {
 
     @Override
     public void init() {
-
         try {
             Files.createDirectory(rootLocation);
             isInit = true;
@@ -34,11 +34,17 @@ public class FileSystemStorageService implements StorageService {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean exists(MultipartFile file) {
         return exists(null, file);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean exists(String subdirectory, MultipartFile file) {
 
@@ -56,11 +62,26 @@ public class FileSystemStorageService implements StorageService {
 
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean exists(Path location) {
+        File directory = location.toFile();
+        return directory.exists();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void store(MultipartFile file) {
         store(null, file);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void store(String subdirectory, MultipartFile file) throws StorageException {
         String filename = file.getOriginalFilename();
@@ -71,10 +92,9 @@ public class FileSystemStorageService implements StorageService {
             }
 
             if(subdirectory == null) {
-                Files.copy(file.getInputStream(), this.rootLocation.resolve(filename));
+                Files.copy(file.getInputStream(), rootLocation.resolve(filename));
             } else {
                 Path childLocation = rootLocation.resolve(subdirectory);
-                //				Files.createDirectory(childLocation);
                 Files.copy(file.getInputStream(), childLocation.resolve(filename));
             }
 
@@ -83,6 +103,62 @@ public class FileSystemStorageService implements StorageService {
         }
 
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void store(String subdirectory, String filename, byte[] content) {
+        try {
+
+            Path location = null;
+            if (subdirectory == null) {
+                location = getRootLocation();
+            } else {
+                location = getSubdirectoryLocation(subdirectory);
+            }
+
+            Files.write(location.resolve(filename), content);
+
+        } catch (IOException e) {
+            throw new StorageException("Failed to write file " + filename, e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void store(String filename, byte[] content) {
+        store(null, filename, content);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void copy(Path source) {
+        copy (null, source);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void copy(String subdirectory, Path source) {
+        try {
+            Path dest = null;
+            if (subdirectory == null) {
+                dest = getRootLocation();
+            } else {
+                dest = getSubdirectoryLocation(subdirectory);
+            }
+            FileUtils.copyDirectory(source.toFile(), dest.toFile());
+        } catch (IOException e) {
+            throw new StorageException("Failed to copy content from " + source.toString() + " into " + subdirectory, e);
+        }
+    }
+
 
     @Override
     public Path load(String filename) {
@@ -167,12 +243,6 @@ public class FileSystemStorageService implements StorageService {
     @Override
     public Path getSubdirectoryLocation(String subdirectory) {
         return rootLocation.resolve(subdirectory);
-    }
-
-    @Override
-    public boolean directoryExists(Path location) {
-        File directory = location.toFile();
-        return directory.exists();
     }
 
     @Override

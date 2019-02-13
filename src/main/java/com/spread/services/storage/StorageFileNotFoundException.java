@@ -2,9 +2,9 @@ package com.spread.services.storage;
 
 public class StorageFileNotFoundException extends StorageException {
 
-	private static final long serialVersionUID = -805602644096626529L;
+    private static final long serialVersionUID = -805602644096626529L;
 
-	public StorageFileNotFoundException(String message) {
+    public StorageFileNotFoundException(String message) {
         super(message);
     }
 

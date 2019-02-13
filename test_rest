@@ -11,16 +11,16 @@ TOKEN=$(curl -X GET http://localhost:$PORT/token |  jq -r '.token')
 curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: multipart/form-data" -F "treefile=@/home/filip/Dropbox/JavaProjects/spread-server/src/test/resources/continuous/speciesDiffusion.MCC.tre" http://localhost:$PORT/continuous/tree
 
 # DELETE entity
-curl -X DELETE -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/tree
+#curl -X DELETE -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/tree
 
 # POST tree file again with the same token
-curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: multipart/form-data" -F "treefile=@/home/filip/Dropbox/JavaProjects/spread-server/src/test/resources/continuous/speciesDiffusion.MCC.tre" http://localhost:$PORT/continuous/tree
+#curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: multipart/form-data" -F "treefile=@/home/filip/Dropbox/JavaProjects/spread-server/src/test/resources/continuous/speciesDiffusion.MCC.tre" http://localhost:$PORT/continuous/tree
 
 #POST geojson file
-curl -X PUT -H "Authorization: Bearer $TOKEN" -H "Content-Type: multipart/form-data" -F "geojsonfile=@/home/filip/Dropbox/JavaProjects/spread-server/src/test/resources/geojson/subregion_Australia_and_New_Zealand_subunits.geojson" http://localhost:$PORT/continuous/geojson
+#curl -X PUT -H "Authorization: Bearer $TOKEN" -H "Content-Type: multipart/form-data" -F "geojsonfile=@/home/filip/Dropbox/JavaProjects/spread-server/src/test/resources/geojson/subregion_Australia_and_New_Zealand_subunits.geojson" http://localhost:$PORT/continuous/geojson
 
 # POST geojson file (reupload)
-curl -X PUT -H "Authorization: Bearer $TOKEN" -H "Content-Type: multipart/form-data" -F "geojsonfile=@/home/filip/Dropbox/JavaProjects/spread-server/src/test/resources/geojson/subregion_Australia_and_New_Zealand_subunits.geojson" http://localhost:$PORT/continuous/geojson
+#curl -X PUT -H "Authorization: Bearer $TOKEN" -H "Content-Type: multipart/form-data" -F "geojsonfile=@/home/filip/Dropbox/JavaProjects/spread-server/src/test/resources/geojson/subregion_Australia_and_New_Zealand_subunits.geojson" http://localhost:$PORT/continuous/geojson
 
 # GET attributes
 curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/attributes
@@ -33,7 +33,7 @@ curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/
 echo -e '\n'
 
 # PUT hpd-level
-curl -X PUT -H "Authorization: Bearer $TOKEN" --data "hpd-level=0.80" http://localhost:$PORT/continuous/hpd-level
+curl -X PUT -H "Authorization: Bearer $TOKEN" --data "hpd-level=80" http://localhost:$PORT/continuous/hpd-level
 
 # PUT ycoordinate
 curl -X PUT -H "Authorization: Bearer $TOKEN" --data "attribute=trait1" http://localhost:$PORT/continuous/coordinates/y
@@ -45,10 +45,10 @@ curl -X PUT -H "Authorization: Bearer $TOKEN" --data "attribute=trait2" http://l
 curl -X PUT -H "Authorization: Bearer $TOKEN" --data "has-external-annotations=true" http://localhost:$PORT/continuous/external-annotations
 
 # PUT timescale-multiplier
-curl -X PUT -H "Authorization: Bearer $TOKEN" --data "timescale-multiplier=0.95" http://localhost:$PORT/continuous/timescale-multiplier
+curl -X PUT -H "Authorization: Bearer $TOKEN" --data "timescale-multiplier=1" http://localhost:$PORT/continuous/timescale-multiplier
 
 # PUT mrsd
-curl -X PUT -H "Authorization: Bearer $TOKEN" --data "mrsd=2017/04/06" http://localhost:$PORT/continuous/mrsd
+curl -X PUT -H "Authorization: Bearer $TOKEN" --data "mrsd=2019/02/12" http://localhost:$PORT/continuous/mrsd
 
 # GET model settings
 curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/model
@@ -71,15 +71,15 @@ curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/
 
 echo -e '\n'
 
-# publish to ipfs
+# # publish to ipfs
 curl -X PUT -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/ipfs
 
-# get ipfs hash
+# # get ipfs hash
 curl -v -X GET -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/ipfs
 
 echo -e '\n'
 
-# poll status
+# # poll status
 curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/status
 
 echo -e '\n'
@@ -87,10 +87,10 @@ echo -e '\n'
 # Waits 0.5 second
 sleep .5
 
-# poll status
+# # poll status
 curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/status
 
-echo -e '\n'
+# echo -e '\n'
 
 # get ipfs hash
 HASH=$(curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/ipfs)
@@ -98,4 +98,4 @@ HASH=$(curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/cont
 # retrieve content
 curl -X GET http://127.0.0.1:8080/ipfs/$HASH
 
-echo -e '\n'
+# echo -e '\n'
