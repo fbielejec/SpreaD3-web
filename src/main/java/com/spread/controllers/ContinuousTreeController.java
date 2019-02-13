@@ -453,7 +453,7 @@ public class ContinuousTreeController {
 
                             String json = doGenerateOutput(continuousTreeModel);
                             // persist in storageDir as data.json
-                            storageService.store(sessionId, "data.json", json.getBytes());
+                            storageService.write(sessionId, "data.json", json.getBytes());
 
                             // update model
                             continuousTreeModel.setOutputFilename(storageService.loadAsResource(sessionId, "data.json").getFile().getAbsolutePath());

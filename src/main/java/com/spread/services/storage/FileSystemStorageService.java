@@ -108,7 +108,7 @@ public class FileSystemStorageService implements StorageService {
      * {@inheritDoc}
      */
     @Override
-    public void store(String subdirectory, String filename, byte[] content) {
+    public void write(String subdirectory, String filename, byte[] content) {
         try {
 
             Path location = null;
@@ -129,8 +129,8 @@ public class FileSystemStorageService implements StorageService {
      * {@inheritDoc}
      */
     @Override
-    public void store(String filename, byte[] content) {
-        store(null, filename, content);
+    public void write(String filename, byte[] content) {
+        write(null, filename, content);
     }
 
     /**

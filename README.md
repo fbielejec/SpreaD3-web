@@ -11,28 +11,35 @@ Author: Filip Bielejec <br />
 REST Web Services to SpreaD3, capable of generating links with on-line visualisations.
 
 ## LICENSE
-  This is free software; you can redistribute it and/or modify 
-  it under the terms of the GNU Lesser General Public License as 
-  published by the Free Software Foundation; either version 3 
-  of the License, or (at your option) any later version. 
- 
+  This is free software; you can redistribute it and/or modify
+  it under the terms of the GNU Lesser General Public License as
+  published by the Free Software Foundation; either version 3
+  of the License, or (at your option) any later version.
+
    This software is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of 
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    "GNU Lesser General Public License": http://www.gnu.org/licenses/lgpl.html for more details.
- 
+
 ## Test
 
 mvn test
- 
+
 ## Dev
 
 mvn spring-boot:run
 
-### Embedded database console (url: jdbc:h2:~/test username: test password: test) 
+### Embedded database console (url: jdbc:h2:~/test username: test password: test)
 http://localhost:4000/h2-console/
+
+### TODO
+
+* improved error handling
+  - generic spread exception (message, thread, context, location [class, method, line])
+* improve logging story
+ - sentry, console + file appender
+* fix test suite
 
 ## Production
 
 mvn clean package && java -jar target/spread3-web-0.0.1.jar
-

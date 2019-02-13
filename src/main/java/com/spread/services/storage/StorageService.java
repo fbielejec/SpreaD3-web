@@ -63,7 +63,7 @@ public interface StorageService {
      * @param filename : filename to write to
      * @param content : array of bytes to write
      */
-    void store(String filename, byte[] content) throws IOException;
+    void write(String filename, byte[] content) throws IOException;
 
     /**
      * Writes a content to a file in a subdirectory
@@ -72,7 +72,7 @@ public interface StorageService {
      * @param filename : filename to write to
      * @param content : array of bytes to write
      */
-    void store(String subdirectory, String filename, byte[] content) throws IOException;
+    void write(String subdirectory, String filename, byte[] content) throws IOException;
 
     /**
      * copies the content of a directory to the root subdirectory
@@ -110,12 +110,5 @@ public interface StorageService {
 
     void deleteSubdirectory(String subdirectory);
 
-    // void copyContent(String )
-
 }
 
-// String source = "C:/your/source";
-// File srcDir = new File(source);
-
-// String destination = "C:/your/destination";
-// File destDir = new File(destination);
