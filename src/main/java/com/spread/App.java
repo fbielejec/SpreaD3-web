@@ -16,12 +16,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import io.sentry.Sentry;
+
 @SpringBootApplication
 @EnableAsync
 public class App {
 
     @Value("${secret}")
     private String secret;
+
+    @Value("${sentry.dsn}")
+    private String sentryDsn;
 
     public static void main(String[] args) {
         SpringApplication.run(App.class, args);
@@ -33,6 +38,7 @@ public class App {
                            IpfsService ipfsService,
                            VisualizationService visualizationService) {
         return (args) -> {
+            Sentry.init(sentryDsn);
             keyRepository.save(new KeyEntity(secret));
             storageService.deleteAll();
             storageService.init();
@@ -41,7 +47,7 @@ public class App {
         };
     }
 
-    @Bean(name = "threadPoolTaskExecutor")  
+    @Bean(name = "threadPoolTaskExecutor")
     public Executor taskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(5);
@@ -51,5 +57,5 @@ public class App {
         executor.initialize();
         return executor;
     }
-    
+
 }
