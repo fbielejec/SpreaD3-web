@@ -9,7 +9,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface StorageService {
 
-    void init();
+    void init(Path rootLocation);
+
+    void createRootDir() throws StorageException;
 
     Boolean isInitialized();
 
@@ -111,4 +113,3 @@ public interface StorageService {
     void deleteSubdirectory(String subdirectory);
 
 }
-

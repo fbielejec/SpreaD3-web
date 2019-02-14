@@ -4,25 +4,23 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class D3VisualizationService implements VisualizationService {
 
-    @Value("${spread.vis.location}")
     private String visualizationLocation;
-
     private Boolean isInit = false;
-    
+
     @Override
-    public void init() {
+    public void init(String visualizationLocation) {
+        this.visualizationLocation = visualizationLocation;
         if(!visualizationExists()) {
             throw new VisualisationDirectoryNotFoundException(visualizationLocation);
         }
         isInit = true;
     }
-    
+
     /**
      * @return the isInit
      */
@@ -37,7 +35,7 @@ public class D3VisualizationService implements VisualizationService {
         }
         return Paths.get(visualizationLocation);
     }
-    
+
     private boolean visualizationExists () {
         return Files.exists(Paths.get(visualizationLocation));
     }

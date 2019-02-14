@@ -5,7 +5,7 @@ import java.nio.file.Path;
 
 public interface IpfsService {
 
-    void init();
+    void init(String ipfsHost);
 
     Boolean isInitialized();
     

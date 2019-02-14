@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import io.ipfs.api.IPFS;
@@ -14,14 +13,11 @@ import io.ipfs.api.NamedStreamable;
 @Service
 public class HttpIpfsService implements IpfsService {
 
-    @Value("${ipfs.host}")
-    private String ipfsHost;
-
     private IPFS ipfs;
     private Boolean isInit = false;
 
     @Override
-    public void init() {
+    public void init(String ipfsHost) {
         ipfs = new IPFS(ipfsHost);
         isInit = true;
     }

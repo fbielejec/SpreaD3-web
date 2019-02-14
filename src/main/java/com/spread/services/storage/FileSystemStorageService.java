@@ -8,7 +8,6 @@ import java.nio.file.Path;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
@@ -18,16 +17,19 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class FileSystemStorageService implements StorageService {
 
-    @Value("${storage.location}")
+    private Boolean isInit = false;
     private Path rootLocation;
 
-    private Boolean isInit = false;
+    @Override
+    public void init(Path rootLocation) {
+        this.rootLocation = rootLocation;
+        isInit = true;
+    }
 
     @Override
-    public void init() {
+    public void createRootDir() {
         try {
             Files.createDirectory(rootLocation);
-            isInit = true;
         } catch (IOException e) {
             isInit = false;
             throw new StorageException("Could not initialize storage", e);

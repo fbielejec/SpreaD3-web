@@ -56,7 +56,6 @@ import jebl.evolution.trees.RootedTree;
 public class ContinuousTreeController {
 
     private final ILogger logger;
-    private final StorageService storageService;
 
     @Autowired
     private IpfsService ipfsService;
@@ -73,9 +72,11 @@ public class ContinuousTreeController {
     @Autowired
     private VisualizationService visualizationService;
 
-    public ContinuousTreeController(StorageService storageService) {
+    @Autowired
+    private StorageService storageService;
+
+    public ContinuousTreeController() {
         this.logger = new LoggerFactory().getLogger(LoggerFactory.DEFAULT);
-        this.storageService = storageService;
     }
 
     /*
@@ -95,11 +96,6 @@ public class ContinuousTreeController {
             if(!(modelRepository.findBySessionId(sessionId) == null)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Session with that id already exists.");
             };
-            // reaupload not possible, just redo the analysis
-            //			if (storageService.exists(sessionId, file)) {
-            //				storageService.delete(sessionId, filename);
-            //				logger.log("Deleting previously uploaded tree file: " + filename, ILogger.INFO);
-            //			}
 
             String filename = file.getOriginalFilename();
 

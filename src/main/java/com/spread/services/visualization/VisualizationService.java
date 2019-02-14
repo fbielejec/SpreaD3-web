@@ -4,7 +4,7 @@ import java.nio.file.Path;
 
 public interface VisualizationService {
 
-    public void init();
+    public void init(String visualizationLocation);
     
     Path getVisualisationDirectory();
 

@@ -90,12 +90,19 @@ sleep .5
 # # poll status
 curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/status
 
-# echo -e '\n'
+echo -e '\n'
 
 # get ipfs hash
 HASH=$(curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:$PORT/continuous/ipfs)
 
-# retrieve content
-curl -X GET http://127.0.0.1:8080/ipfs/$HASH
+echo -e '\n'
 
-# echo -e '\n'
+# retrieve content
+echo -e http://127.0.0.1:8080/ipfs/$HASH
+
+echo -e '\n'
+
+# retrieve content
+#curl -X GET http://127.0.0.1:8080/ipfs/$HASH
+
+echo -e '\n'
