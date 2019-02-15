@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
 
 public class DefaultLogger implements ILogger {
 
-    private final Logger logger = LogManager.getLogger(this.getClass());
+    private final Logger logger = LogManager.getLogger("AppLogger");
 
     @Override
     public void log(String message, Integer level) {

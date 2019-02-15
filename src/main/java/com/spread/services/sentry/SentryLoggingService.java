@@ -10,6 +10,7 @@ import io.sentry.Sentry;
 import io.sentry.servlet.SentryServletContainerInitializer;
 
 @Service
+// @Profile("production")
 public class SentryLoggingService {
 
     private Boolean isInit = false;

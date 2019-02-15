@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.concurrent.Executor;
 
 import com.spread.domain.KeyEntity;
+import com.spread.loggers.ILogger;
+import com.spread.loggers.LoggerFactory;
 import com.spread.repositories.KeyRepository;
 import com.spread.services.ipfs.IpfsService;
 import com.spread.services.sentry.SentryLoggingService;
@@ -23,6 +25,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @SpringBootApplication
 @EnableAsync
 public class App {
+
+    private  ILogger logger;
 
     @Value("${secret}")
     private String secret;
@@ -65,6 +69,8 @@ public class App {
     CommandLineRunner init() {
         return (args) -> {
 
+            logger = new LoggerFactory().getLogger(LoggerFactory.DEFAULT);
+
             HashMap<String, String> opts = new HashMap<>();
             opts.put("stacktrace.app.packages", stackTraceAppPackages);
             // sentry.init(dsn, opts);
@@ -77,6 +83,9 @@ public class App {
 
             ipfsService.init(ipfsHost);
             visualizationService.init(visualizationLocation);
+
+            logger.log("Application rebooted", ILogger.WARNING);
+
         };
     }
 
