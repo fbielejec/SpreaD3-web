@@ -1,11 +1,19 @@
 language: java
 jdk:
-  - oraclejdk8
+- oraclejdk8
 sudo: false
-script: mvn clean verify
-# after_success:
-# - bash <(curl -s https://codecov.io/bash)
 notifications:
   email:
     on_success: change
     on_failure: change
+env:
+  global:
+  - secure: CyjgBKtm8WMXXf69GR67MO7wNSF2DnlcTja7mS5fWQuElk4060jJXtP06ShAdJSP6MEQcyMROvVzjszFN2JHCfPCSZgHwTrrmoHdOZamkL+/5SO2oWstMg3qBwmSAeRgAYwh7cupMV9k8BpduWhHGsj7D9YLx0KnyvX9vjKMTZKUabzOJVtf9HbAkfAh54KEIYH/WZcbhiYAYkBM70yIRuYecBsA3eYoczEWBFRjxvFOcZ9wEiHkc9rInsuRT3U9gSlZ9VSa89yvfud9DfibxkAj8IR2Mw2ka5ZoSGyH705k9tuz3cBzv95QqTuvng1MgRJyANHfzztoHCCoud58I2OCyP8PmhIuPOIa5nQb8DtzV6MX2FxEFo2MX4+Opw9cwKWlKm4eAcD2JdT8/sw1GOZUKp/sxNDbdaZFz81qPA/JWnWQPc5aee4V+/XtDSZTQvEnwSbmlHUf2euicEeq5i0h/8X1wiTohGd07z0MwBH0sbtVPuBDZi7YmFrN3omGOVmXOzZlKdIpjIK84FO1lFjr1Yxn0vZB3Lzmht24Gh59xICvrW3dBxqLWyUr7cI1V8CqZcLjDNj8XI4PVpX2EJvbKSsTERndvwXKLheD5yTgdiWQQJjKKRGg/F2Hdvn0D11R4RE4beiXr/Nt9LitbuAgBFe9ex2ZUkQcOcIog50=
+  - secure: aWM/hvvF0aq+/25/Je/8grGZsaQTsIEBJ7fqnY1CCfwJdIcutcg3hROme4L6JQ16z1zeKpLlwgamdWZYdsuN3RxKH0Bpdc0NZxMZpA6pDqpqOPJriUVu9oiQ4qE9h11vXGBeSNmBX8RuA3VhH4OBUonbkEaBzHjcv4EadFxt8a781kDeP9APAJageqoN2zZLUJq9jdUHNpqM3btDmpjwpxOKxfbeBBsSXgUbKYTTMdwsTDf1dIN8iCYKck76fCY6yJ/JuzdnPTZzDpRPpcala8MOdRffkb7Sb3B95uoOfYHR6jqeAvEWMYuOjscDd0aKR/8POsmHYEwyAaE1q8HQmbfNVy7OBPJNQIa7JpJ2PomRdvnKFaK7MevvKMa7wcpsmg9VQqDJl2OzsS37Vxp+oQ/DV0xIjTCRIJKV0ro1Fpqv/mU6K3c8ZkPX1WC2wDb12q76TQhCK6/jn0TAPp36AvRrQVvBvfHqobTNjXSOWbTWCwBjVhGkyskUvXu2jiSNoiBxXX3acxDUbq61PcNWSKpbLNPRIs+sPTlsxRw8vK8J8fyIzm3RgiZ7Fki11x7dSVoag1EuWo3Zd9Fbgq+NvxSTbjQ1S6ExuPE/1slMzA7KCRAjae0UHj60VjsWrAOXSLgxJJfFEdTzg0RONik7xDpnRut9ZOUQuY6dMjNyKeA=
+# services:
+#   - docker
+# deploy:
+#   provider: script
+#   script: bash docker-push.sh
+#   on:
+#     branch: master

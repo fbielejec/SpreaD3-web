@@ -22,13 +22,9 @@
 
     <Console name="ConsoleAppender" target="SYSTEM_OUT" follow="true">
       <PatternLayout pattern="${CONSOLE_LOG_PATTERN}"/>
-      <!-- <Filters> -->
-      <!--   <BurstFilter level="INFO" rate="10" maxBurst="100"/> -->
-      <!-- </Filters> -->
     </Console>
 
     <RollingFile name="FileAppender" fileName="${LOG_FILE_PATH}/${LOG_FILE_NAME}" filePattern="${LOG_FILE_PATH}/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
-      <!-- <PatternLayout pattern="${FILE_LOG_PATTERN}"/> -->
       <JSONLayout complete="true" compact="false"/>
       <Policies>
         <OnStartupTriggeringPolicy />
@@ -42,7 +38,7 @@
 
   <Loggers>
     
-    <Logger name="AppLogger" level="DEBUG" additivity="false">
+    <Logger name="AppLogger" level="${APP_LOG_LEVEL}" additivity="false">
       <AppenderRef ref="ConsoleAppender"/>
       <AppenderRef ref="FileAppender"/>
        <appender-ref ref="Sentry" level="ERROR" />

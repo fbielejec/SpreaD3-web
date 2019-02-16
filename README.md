@@ -27,19 +27,16 @@ mvn test
 
 ## Dev
 
+* Run with default config:
 mvn spring-boot:run
+
+* Override config values:
+mvn spring-boot:run -Drun.arguments=--server.port=6300,--app.logging.level=INFO
 
 ### Embedded database console (url: jdbc:h2:~/test username: test password: test)
 http://localhost:4000/h2-console/
 
-### TODO
-
-* improved error handling
-  - generic spread exception (message, thread, context, location [class, method, line])
-* improve logging story
- - sentry, console + file appender
-* fix test suite
-
 ## Production
 
-mvn clean package && java -jar target/spread3-web-0.0.1.jar
+mvn clean package -DskipTests && java -jar target/spread-server-0.0.1.jar --spring.config.location=file:/home/filip/Dropbox/JavaProjects/spread.properties
+

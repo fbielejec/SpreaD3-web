@@ -1,0 +1,58 @@
+version: "3"
+services:
+
+  ipfs-daemon:
+    build: ipfs/daemon
+    container_name: qa_ipfs-daemon
+    volumes:
+      - /home/$USER/ipfs-docker:/data/ipfs
+      - /home/$USER/ipfs-docker-staging:/export
+    networks:
+      - ipfs-net
+
+  ipfs-api:
+    build: ipfs/api
+    container_name: qa_ipfs-api
+    depends_on:
+      - ipfs-daemon
+    ports:
+      - 5001:5001
+    networks:
+      - ipfs-net
+
+  ipfs-gateway:
+    build: ipfs/gateway
+    container_name: qa_ipfs-gateway
+    depends_on:
+      - ipfs-daemon
+    ports:
+      - 8080:8080
+    networks:
+      - ipfs-net
+
+  # TODO : nginx api.spread.nodrama.io
+      
+  spread-server:
+    image: nodrama/spread-server:latest
+    container_name: spread-server
+    depends_on:
+      - ipfs-daemon
+      - ipfs-api
+      - ipfs-gateway
+    ports:
+      - 4000:4000
+    networks:
+      - ipfs-net
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      
+  watchtower:
+    image: v2tec/watchtower:latest
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --label-enable --cleanup --interval 300
+
+networks:
+  ipfs-net:
+    driver: "bridge"

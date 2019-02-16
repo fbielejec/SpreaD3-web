@@ -1,6 +1,7 @@
 package com.spread;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.Executor;
 
@@ -19,6 +20,9 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -61,6 +65,9 @@ public class App {
     @Autowired
     SentryLoggingService sentry;
 
+    @Autowired
+    private Environment env;
+
     public static void main(String[] args) {
         SpringApplication.run(App.class, args);
     }
@@ -84,7 +91,8 @@ public class App {
             ipfsService.init(ipfsHost);
             visualizationService.init(visualizationLocation);
 
-            logger.log("Application rebooted", ILogger.WARNING);
+            // TODO : log config
+            logger.log("Application rebooted", ILogger.ERROR);
 
         };
     }
@@ -99,5 +107,20 @@ public class App {
         executor.initialize();
         return executor;
     }
+
+    @EventListener({ContextRefreshedEvent.class})
+    void contextRefreshedEvent(ContextRefreshedEvent event) {
+
+        System.out.println(
+                           Arrays.toString(event.getApplicationContext().getEnvironment().getActiveProfiles()));
+
+        System.out.println(
+                           event.getApplicationContext().getEnvironment().getProperty("server.port").toString());
+
+        System.out.println(env.getProperty("app.logging.level"));
+
+    }
+
+
 
 }
