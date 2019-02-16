@@ -37,11 +37,11 @@
   </Appenders>
 
   <Loggers>
-    
+
     <Logger name="AppLogger" level="${APP_LOG_LEVEL}" additivity="false">
       <AppenderRef ref="ConsoleAppender"/>
       <AppenderRef ref="FileAppender"/>
-       <appender-ref ref="Sentry" level="ERROR" />
+      <appender-ref ref="Sentry" level="ERROR" />
     </Logger>
 
     <!-- everything not logged by the AppLogger  -->
@@ -53,4 +53,5 @@
     </Root>
 
   </Loggers>
+
 </Configuration>

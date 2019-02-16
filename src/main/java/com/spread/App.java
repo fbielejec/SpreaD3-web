@@ -30,7 +30,10 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @EnableAsync
 public class App {
 
-    private  ILogger logger;
+    private ILogger logger;
+
+    @Value("${spring.profiles.active}")
+    private String activeProfile;
 
     @Value("${secret}")
     private String secret;
@@ -63,7 +66,7 @@ public class App {
     private VisualizationService visualizationService;
 
     @Autowired
-    SentryLoggingService sentry;
+    private SentryLoggingService sentry;
 
     @Autowired
     private Environment env;
@@ -80,7 +83,9 @@ public class App {
 
             HashMap<String, String> opts = new HashMap<>();
             opts.put("stacktrace.app.packages", stackTraceAppPackages);
-            // sentry.init(dsn, opts);
+
+            if (activeProfile.equalsIgnoreCase("production"))
+                sentry.init(dsn, opts);
 
             keyRepository.save(new KeyEntity(secret));
 
@@ -92,7 +97,7 @@ public class App {
             visualizationService.init(visualizationLocation);
 
             // TODO : log config
-            logger.log("Application rebooted", ILogger.ERROR);
+            logger.log("Application reboot: " + activeProfile, ILogger.ERROR);
 
         };
     }
