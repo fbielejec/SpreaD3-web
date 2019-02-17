@@ -21,8 +21,8 @@ import com.spread.domain.AttributeEntity;
 import com.spread.domain.ContinuousTreeModelEntity;
 import com.spread.domain.SessionEntity;
 import com.spread.exceptions.SpreadException;
+import com.spread.loggers.AbstractLogger;
 import com.spread.loggers.ILogger;
-import com.spread.loggers.LoggerFactory;
 import com.spread.parsers.ContinuousTreeParser;
 import com.spread.parsers.GeoJSONParser;
 import com.spread.parsers.TimeParser;
@@ -55,7 +55,7 @@ import jebl.evolution.trees.RootedTree;
 @RequestMapping("/continuous")
 public class ContinuousTreeController {
 
-    private final ILogger logger;
+    private AbstractLogger logger;
 
     @Autowired
     private IpfsService ipfsService;
@@ -76,7 +76,10 @@ public class ContinuousTreeController {
     private StorageService storageService;
 
     public ContinuousTreeController() {
-        this.logger = new LoggerFactory().getLogger(LoggerFactory.DEFAULT);
+    }
+
+    public void init(AbstractLogger logger) {
+        this.logger = logger;
     }
 
     /*
@@ -90,7 +93,10 @@ public class ContinuousTreeController {
 
         try {
 
-            logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+            logger.log(ILogger.INFO, "Received authorization header", new String[][] {
+                    {"token", authorizationHeader}
+                });
+
             String sessionId = getSessionId(authorizationHeader);
 
             if(!(modelRepository.findBySessionId(sessionId) == null)) {
@@ -101,7 +107,7 @@ public class ContinuousTreeController {
 
             storageService.createSubdirectory(sessionId);
             storageService.store(sessionId, file);
-            logger.log("tree file " + filename + " successfully persisted.", ILogger.INFO);
+            // logger.log("tree file " + filename + " successfully persisted.", ILogger.INFO);
 
             ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity(storageService.loadAsResource(sessionId, filename).getFile().getAbsolutePath(),
                                                                                           new SessionEntity(sessionId));
@@ -117,19 +123,19 @@ public class ContinuousTreeController {
 
             modelRepository.save(continuousTreeModel);
 
-            logger.log("continuousTreeModelEntity with id " + continuousTreeModel.getId() + " successfully persisted.",
-                       ILogger.INFO);
+            // logger.log("continuousTreeModelEntity with id " + continuousTreeModel.getId() + " successfully persisted.",
+            //            ILogger.INFO);
 
-            logger.log(atts.size() + " attributes successfully persisted.", ILogger.INFO);
+            // logger.log(atts.size() + " attributes successfully persisted.", ILogger.INFO);
 
             HttpHeaders responseHeaders = new HttpHeaders();
             responseHeaders.set("Location", sessionId);
             return new ResponseEntity<>(responseHeaders, HttpStatus.CREATED);
         } catch (IOException | ImportException e) {
-            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         } catch (SignatureException e) {
-            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
@@ -139,14 +145,14 @@ public class ContinuousTreeController {
 
         try {
 
-            logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+            // logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
             String sessionId = getSessionId(authorizationHeader);
 
             // delete the entity
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
 
             if(continuousTreeModel == null) {
-                logger.log("No content with that session id: "+ sessionId, ILogger.INFO);
+                // logger.log("No content with that session id: "+ sessionId, ILogger.INFO);
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             }
 
@@ -154,14 +160,14 @@ public class ContinuousTreeController {
 
             storageService.deleteSubdirectory(sessionId);
 
-            logger.log("tree file successfully deleted.", ILogger.INFO);
+            // logger.log("tree file successfully deleted.", ILogger.INFO);
 
-            logger.log("continuousTreeModelEntity with id " + sessionId + " successfully deleted.",
-                       ILogger.INFO);
+            // logger.log("continuousTreeModelEntity with id " + sessionId + " successfully deleted.",
+            //            ILogger.INFO);
 
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (SignatureException e) {
-            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
@@ -171,7 +177,7 @@ public class ContinuousTreeController {
         throws IOException, ImportException {
         try {
 
-            logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+            // logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
             String sessionId = getSessionId(authorizationHeader);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
@@ -182,7 +188,7 @@ public class ContinuousTreeController {
 
             return ResponseEntity.ok().body(uniqueAttributes);
         } catch (SignatureException e) {
-            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
             return null;
         }
     }
@@ -193,7 +199,7 @@ public class ContinuousTreeController {
 
         try {
 
-            logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+            // logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
             String sessionId = getSessionId(authorizationHeader);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
@@ -203,7 +209,7 @@ public class ContinuousTreeController {
 
             return ResponseEntity.ok().body(hpdLevels);
         } catch (SignatureException e) {
-            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
             return null;
         }
     }
@@ -212,7 +218,7 @@ public class ContinuousTreeController {
     public ResponseEntity<Object> setHpdLevel(@RequestHeader(value = "Authorization") String authorizationHeader,
                                               @RequestParam(value = "hpd-level", required = true) Integer hpdLevel) {
         try {
-            logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+            // logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
             String sessionId = getSessionId(authorizationHeader);
 
             Integer min = 0;
@@ -222,17 +228,17 @@ public class ContinuousTreeController {
                 ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
                 continuousTreeModel.setHpdLevel(hpdLevel);
                 modelRepository.save(continuousTreeModel);
-                logger.log("hpd level parameter successfully set.", ILogger.INFO);
+                // logger.log("hpd level parameter successfully set.", ILogger.INFO);
 
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 String message = "value is outside of permitted interval [" + min + "," + max + "]";
-                logger.log(message, ILogger.ERROR);
+                // logger.log(message, ILogger.ERROR);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(message);
             }
 
         } catch (SignatureException e) {
-            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
@@ -243,17 +249,17 @@ public class ContinuousTreeController {
 
         try {
 
-            logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+            // logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
             String sessionId = getSessionId(authorizationHeader);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
             continuousTreeModel.setyCoordinate(attribute);
             modelRepository.save(continuousTreeModel);
 
-            logger.log("y coordinate successfully set.", ILogger.INFO);
+            // logger.log("y coordinate successfully set.", ILogger.INFO);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (SignatureException e) {
-            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
@@ -264,17 +270,17 @@ public class ContinuousTreeController {
 
         try {
 
-            logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+            // logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
             String sessionId = getSessionId(authorizationHeader);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
             continuousTreeModel.setxCoordinate(attribute);
             modelRepository.save(continuousTreeModel);
 
-            logger.log("x coordinate successfully set.", ILogger.INFO);
+            // logger.log("x coordinate successfully set.", ILogger.INFO);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (SignatureException e) {
-            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
@@ -286,17 +292,17 @@ public class ContinuousTreeController {
 
         try {
 
-            logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+            // logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
             String sessionId = getSessionId(authorizationHeader);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
             continuousTreeModel.setHasExternalAnnotations(hasExternalAnnotations);
             modelRepository.save(continuousTreeModel);
 
-            logger.log("external annotations parameter successfully set.", ILogger.INFO);
+            // logger.log("external annotations parameter successfully set.", ILogger.INFO);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (SignatureException e) {
-            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
@@ -307,7 +313,7 @@ public class ContinuousTreeController {
 
         try {
 
-            logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+            // logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
             String sessionId = getSessionId(authorizationHeader);
 
             if (TimeParser.isParseableDate(mrsd)) {
@@ -316,18 +322,18 @@ public class ContinuousTreeController {
                 continuousTreeModel.setMrsd(mrsd);
                 modelRepository.save(continuousTreeModel);
 
-                logger.log("Mrsd parameter successfully set.", ILogger.INFO);
+                // logger.log("Mrsd parameter successfully set.", ILogger.INFO);
                 return new ResponseEntity<>(HttpStatus.OK);
 
             } else {
                 String message = "mrsd parameter is in a wrong format. Use " + "yyyy" + TimeParser.separator + "MM"
                     + TimeParser.separator + "dd" + " format.";
-                logger.log(message, ILogger.ERROR);
+                // logger.log(message, ILogger.ERROR);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(message);
             }
 
         } catch (SignatureException e) {
-            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
@@ -339,7 +345,7 @@ public class ContinuousTreeController {
 
         try {
 
-            logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+            // logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
             String sessionId = getSessionId(authorizationHeader);
 
             Double min = Double.MIN_NORMAL;
@@ -351,16 +357,16 @@ public class ContinuousTreeController {
                 continuousTreeModel.setTimescaleMultiplier(timescaleMultiplier);
                 modelRepository.save(continuousTreeModel);
 
-                logger.log("timescale multiplier parameter successfully set.", ILogger.INFO);
+                // logger.log("timescale multiplier parameter successfully set.", ILogger.INFO);
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 String message = "value is outside of permitted interval [" + min + "," + max + "]";
-                logger.log(message, ILogger.ERROR);
+                // logger.log(message, ILogger.ERROR);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(message);
             }
 
         } catch (SignatureException e) {
-            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
@@ -371,7 +377,7 @@ public class ContinuousTreeController {
 
         try {
 
-            logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+            // logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
 
             String sessionId = getSessionId(authorizationHeader);
             String filename = file.getOriginalFilename();
@@ -379,7 +385,7 @@ public class ContinuousTreeController {
             HttpStatus status = HttpStatus.NO_CONTENT;
             if (storageService.exists(sessionId, file)) {
                 storageService.delete(sessionId, filename);
-                logger.log("Deleting previously uploaded geojson file: " + filename, ILogger.INFO);
+                // logger.log("Deleting previously uploaded geojson file: " + filename, ILogger.INFO);
                 status = HttpStatus.CREATED;
             } else {
                 status = HttpStatus.OK;
@@ -392,14 +398,14 @@ public class ContinuousTreeController {
                                                    storageService.loadAsResource(sessionId, filename).getFile().getAbsolutePath());
             modelRepository.save(continuousTreeModel);
 
-            logger.log("geojson file successfully uploaded.", ILogger.INFO);
+            // logger.log("geojson file successfully uploaded.", ILogger.INFO);
 
             return new ResponseEntity<>(status);
         } catch (SignatureException e) {
-            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         } catch (IOException e) {
-            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
@@ -434,7 +440,7 @@ public class ContinuousTreeController {
         try {
 
 
-            logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+            // logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
             String sessionId = getSessionId(authorizationHeader);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
@@ -445,7 +451,7 @@ public class ContinuousTreeController {
                     public void run() {
                         try {
 
-                            logger.log("Generating output" , ILogger.INFO);
+                            // logger.log("Generating output" , ILogger.INFO);
 
                             String json = doGenerateOutput(continuousTreeModel);
                             // persist in storageDir as data.json
@@ -456,13 +462,13 @@ public class ContinuousTreeController {
                             continuousTreeModel.setStatus(ContinuousTreeModelEntity.Status.OUTPUT_READY);
                             modelRepository.save(continuousTreeModel);
 
-                            logger.log("Output succesfully generated", ILogger.INFO);
+                            // logger.log("Output succesfully generated", ILogger.INFO);
                         } catch (IOException e) {
-                            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+                            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
                         } catch (ImportException e) {
-                            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+                            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
                         } catch (SpreadException e) {
-                            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+                            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
                         }
                     }
                 });
@@ -475,7 +481,7 @@ public class ContinuousTreeController {
             responseHeaders.set("Location", sessionId);
             return new ResponseEntity<>(responseHeaders, HttpStatus.ACCEPTED);
         } catch (SignatureException e) {
-            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
@@ -484,7 +490,7 @@ public class ContinuousTreeController {
     public ResponseEntity<Object> putIpfs(@RequestHeader(value = "Authorization") String authorizationHeader) {
         try {
 
-            logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+            // logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
             String sessionId = getSessionId(authorizationHeader);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
@@ -495,20 +501,20 @@ public class ContinuousTreeController {
                     public void run() {
                         try {
 
-                            logger.log("Copying visualisation" , ILogger.INFO);
+                            // logger.log("Copying visualisation" , ILogger.INFO);
                             Path source = visualizationService.getVisualisationDirectory();
                             storageService.copy(sessionId, source);
-                            logger.log("Copied visualisation from " + source.toString() + " to " + sessionId , ILogger.INFO);
+                            // logger.log("Copied visualisation from " + source.toString() + " to " + sessionId , ILogger.INFO);
 
-                            logger.log("Publishing to ipfs" , ILogger.INFO);
+                            // logger.log("Publishing to ipfs" , ILogger.INFO);
                             String hash = ipfsService.addDirectory(storageService.getSubdirectoryLocation(sessionId));
                             continuousTreeModel.setIpfsHash(hash);
                             continuousTreeModel.setStatus(ContinuousTreeModelEntity.Status.IPFS_HASH_READY);
                             modelRepository.save(continuousTreeModel);
 
-                            logger.log("Published to Ipfs with hash: " + hash , ILogger.INFO);
+                            // logger.log("Published to Ipfs with hash: " + hash , ILogger.INFO);
                         } catch (IOException e) {
-                            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+                            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
                         }
                     }
                 });
@@ -521,7 +527,7 @@ public class ContinuousTreeController {
             responseHeaders.set("Location", sessionId);
             return new ResponseEntity<>(responseHeaders, HttpStatus.ACCEPTED);
         } catch (SignatureException e) {
-            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
@@ -531,7 +537,7 @@ public class ContinuousTreeController {
 
         try {
 
-            logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+            // logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
             String sessionId = getSessionId(authorizationHeader);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
@@ -546,7 +552,7 @@ public class ContinuousTreeController {
             }
 
         } catch (SignatureException e) {
-            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
@@ -557,14 +563,14 @@ public class ContinuousTreeController {
 
         try {
 
-            logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+            // logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
             String sessionId = getSessionId(authorizationHeader);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
 
             return ResponseEntity.ok().header(new HttpHeaders().toString()).body(continuousTreeModel.getStatus().toString());
         } catch (SignatureException e) {
-            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
@@ -576,7 +582,7 @@ public class ContinuousTreeController {
 
         try {
 
-            logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
+            // logger.log("Received authorization header: " + authorizationHeader, ILogger.INFO);
             String sessionId = getSessionId(authorizationHeader);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
@@ -584,7 +590,7 @@ public class ContinuousTreeController {
             // TODO: to JSON
             return ResponseEntity.ok().header(new HttpHeaders().toString()).body(continuousTreeModel.toString());
         } catch (SignatureException e) {
-            logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
@@ -605,7 +611,7 @@ public class ContinuousTreeController {
 
         timeLine = timeParser.getTimeLine(rootedTree.getHeight(rootedTree.getRootNode()));
 
-        logger.log("Parsed time line", ILogger.INFO);
+        // logger.log("Parsed time line", ILogger.INFO);
 
         ContinuousTreeParser treeParser = new ContinuousTreeParser(rootedTree, //
                                                                    continuousTreeModel.getxCoordinate(), //
@@ -617,13 +623,13 @@ public class ContinuousTreeController {
 
         treeParser.parseTree();
 
-        logger.log("Parsed the tree", ILogger.INFO);
+        // logger.log("Parsed the tree", ILogger.INFO);
 
         lineAttributes = treeParser.getLineAttributes();
         pointAttributes = treeParser.getPointAttributes();
         areaAttributes = treeParser.getAreaAttributes();
 
-        logger.log("Parsed tree attributes", ILogger.INFO);
+        // logger.log("Parsed tree attributes", ILogger.INFO);
 
         // ---GEOJSON LAYER---//
 
@@ -641,7 +647,7 @@ public class ContinuousTreeController {
 
             layersList.add(geojsonLayer);
 
-            logger.log("Parsed map attributes", ILogger.INFO);
+            // logger.log("Parsed map attributes", ILogger.INFO);
         } // END: null check
 
         // ---DATA LAYER (TREE LINES & POINTS, AREAS)---//

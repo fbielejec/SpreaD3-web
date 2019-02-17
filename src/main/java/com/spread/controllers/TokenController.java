@@ -2,6 +2,9 @@ package com.spread.controllers;
 
 import java.util.UUID;
 
+import com.spread.repositories.KeyRepository;
+import com.spread.utils.TokenUtils;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,41 +15,36 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import com.spread.loggers.ILogger;
-import com.spread.loggers.LoggerFactory;
-import com.spread.repositories.KeyRepository;
-import com.spread.utils.TokenUtils;
-
 @Controller
 @CrossOrigin
 public class TokenController {
 
-	@Autowired
-	private KeyRepository keyRepository;
-	
-	private final ILogger logger;
+    @Autowired
+    private KeyRepository keyRepository;
 
-	public TokenController() {
-		this.logger = new LoggerFactory().getLogger(LoggerFactory.DEFAULT);
-	}
+    // private final ILogger logger;
 
-	@RequestMapping(path = "/token", method = RequestMethod.GET)
-	public ResponseEntity<Object> respondWithToken() {
+    public TokenController() {
+        // this.logger = new LoggerFactory().getLogger(LoggerFactory.DEFAULT);
+    }
 
-		try {
+    @RequestMapping(path = "/token", method = RequestMethod.GET)
+    public ResponseEntity<Object> respondWithToken() {
 
-			String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
-			
-			String uuid = UUID.randomUUID().toString();
-			String jwt = TokenUtils.createJWT(secret, uuid);
-			JSONObject body = new JSONObject().put("token", jwt);
+        try {
 
-			return ResponseEntity.status(HttpStatus.OK).body(body.toString());
-		} catch (JSONException e) {
-			logger.log(e.getMessage(), ILogger.ERROR);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-		}
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
 
-	}
+            String uuid = UUID.randomUUID().toString();
+            String jwt = TokenUtils.createJWT(secret, uuid);
+            JSONObject body = new JSONObject().put("token", jwt);
+
+            return ResponseEntity.status(HttpStatus.OK).body(body.toString());
+        } catch (JSONException e) {
+            // logger.log(e.getMessage(), ILogger.ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+
+    }
 
 }

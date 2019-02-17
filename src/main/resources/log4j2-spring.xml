@@ -1,21 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<Configuration>
-
+<Configuration monitorInterval="1">
+  
   <Properties>
 
     <Property name="APP_LOG_LEVEL">${bundle:application:app.logging.level}</Property>
+    <Property name="SENTRY_LOG_LEVEL">${bundle:application:sentry.logging.level}</Property>
     <Property name="LOG_FILE_PATH">${bundle:application:log.file.path}</Property>
     <Property name="LOG_FILE_NAME">${bundle:application:log.file.name}</Property>
 
     <Property name="CONSOLE_LOG_PATTERN">
-      %d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}} %highlight{${LOG_LEVEL_PATTERN:-%5p}}{FATAL=bg_red, ERROR=red, WARN=yellow, INFO=green, DEBUG=blue} %style{${sys:PID}}{magenta} [%15.15t] %style{%-40.40C{1.}}{cyan} : %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}
+      <!-- %d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}}{GMT} -->
+      %highlight{${LOG_LEVEL_PATTERN:-%5p}}{FATAL=bg_red, ERROR=red, WARN=yellow, INFO=green, DEBUG=blue} %m %n
     </Property>
 
+    <Property name="ROOT_CONSOLE_LOG_PATTERN">
+      <!-- %d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}}{GMT} -->
+      %highlight{${LOG_LEVEL_PATTERN:-%5p}}{FATAL=bg_red, ERROR=red, WARN=yellow, INFO=green, DEBUG=blue} {"message" : "%m"} %n
+    </Property>
+    
     <Property name="FILE_LOG_PATTERN">
-      %d %p %c{1.} [%t] %m%n
+      %m %n
     </Property>
 
+    <Property name="ROOT_FILE_LOG_PATTERN">
+      {"message" : "%m"} %n
+    </Property>
+    
   </Properties>
 
   <Appenders>
@@ -25,13 +36,26 @@
     </Console>
 
     <RollingFile name="FileAppender" fileName="${LOG_FILE_PATH}/${LOG_FILE_NAME}" filePattern="${LOG_FILE_PATH}/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
-      <JSONLayout complete="true" compact="false"/>
+       <PatternLayout pattern="${FILE_LOG_PATTERN}"/>
       <Policies>
         <OnStartupTriggeringPolicy />
         <SizeBasedTriggeringPolicy size="50 MB" />
       </Policies>
     </RollingFile>
 
+    <Console name="RootConsoleAppender" target="SYSTEM_OUT" follow="true">
+      <PatternLayout pattern="${ROOT_CONSOLE_LOG_PATTERN}"/>
+    </Console>
+
+    <RollingFile name="RootFileAppender" fileName="${LOG_FILE_PATH}/${LOG_FILE_NAME}" filePattern="${LOG_FILE_PATH}/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
+       <!-- <PatternLayout pattern="${ROOT_FILE_LOG_PATTERN}"/> -->
+       <JSONLayout locationInfo="true" eventEol="true" compact="true"/>
+      <Policies>
+        <OnStartupTriggeringPolicy />
+        <SizeBasedTriggeringPolicy size="50 MB" />
+      </Policies>
+    </RollingFile>
+    
     <Sentry name="Sentry" />
 
   </Appenders>
@@ -41,15 +65,15 @@
     <Logger name="AppLogger" level="${APP_LOG_LEVEL}" additivity="false">
       <AppenderRef ref="ConsoleAppender"/>
       <AppenderRef ref="FileAppender"/>
-      <appender-ref ref="Sentry" level="ERROR" />
+      <!-- <appender-ref ref="Sentry" level="ERROR" /> -->
     </Logger>
 
     <!-- everything not logged by the AppLogger  -->
     <Root level="INFO">
-      <AppenderRef ref="ConsoleAppender" level="WARN"/>
-      <AppenderRef ref="FileAppender" level="WARN"/>
+      <AppenderRef ref="RootConsoleAppender" level="WARN"/>
+      <AppenderRef ref="RootFileAppender" level="WARN"/>
       <!-- Sentry logging threshold is overridden to the ERROR level -->
-      <appender-ref ref="Sentry" level="ERROR" />
+      <appender-ref ref="Sentry" level="${SENTRY_LOG_LEVEL}" />
     </Root>
 
   </Loggers>

@@ -1,16 +1,16 @@
 package com.spread;
 
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.Executor;
 
+import com.spread.controllers.ContinuousTreeController;
 import com.spread.domain.KeyEntity;
+import com.spread.loggers.AbstractLogger;
 import com.spread.loggers.ILogger;
-import com.spread.loggers.LoggerFactory;
 import com.spread.repositories.KeyRepository;
 import com.spread.services.ipfs.IpfsService;
-import com.spread.services.sentry.SentryLoggingService;
+import com.spread.services.logging.LoggingService;
 import com.spread.services.storage.StorageService;
 import com.spread.services.visualization.VisualizationService;
 
@@ -20,9 +20,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -30,7 +27,11 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @EnableAsync
 public class App {
 
-    private ILogger logger;
+    @Value("${app.logging.level}")
+    private String appLoggingLevel;
+
+    @Value("${sentry.logging.level}")
+    private String sentryLoggingLevel;
 
     @Value("${spring.profiles.active}")
     private String activeProfile;
@@ -54,6 +55,9 @@ public class App {
     private String visualizationLocation;
 
     @Autowired
+    private LoggingService loggingService;
+
+    @Autowired
     private StorageService storageService;
 
     @Autowired
@@ -66,10 +70,7 @@ public class App {
     private VisualizationService visualizationService;
 
     @Autowired
-    private SentryLoggingService sentry;
-
-    @Autowired
-    private Environment env;
+    private ContinuousTreeController continuousTreeController;
 
     public static void main(String[] args) {
         SpringApplication.run(App.class, args);
@@ -79,13 +80,13 @@ public class App {
     CommandLineRunner init() {
         return (args) -> {
 
-            logger = new LoggerFactory().getLogger(LoggerFactory.DEFAULT);
+            HashMap<String, String> opts = new HashMap<String, String>() {
+                    private static final long serialVersionUID = 1L;
+                    {
+                        put("stacktrace.app.packages", stackTraceAppPackages);
+                    }};
 
-            HashMap<String, String> opts = new HashMap<>();
-            opts.put("stacktrace.app.packages", stackTraceAppPackages);
-
-            if (activeProfile.equalsIgnoreCase("production"))
-                sentry.init(dsn, opts);
+            AbstractLogger logger = loggingService.init(activeProfile, sentryLoggingLevel, dsn, opts);
 
             keyRepository.save(new KeyEntity(secret));
 
@@ -96,8 +97,18 @@ public class App {
             ipfsService.init(ipfsHost);
             visualizationService.init(visualizationLocation);
 
-            // TODO : log config
-            logger.log("Application reboot: " + activeProfile, ILogger.ERROR);
+            continuousTreeController.init(logger);
+
+            logger.log(ILogger.ERROR, "Application rebooted!", new String[][] {
+                    {"spring.profiles.active", activeProfile},
+                    {"secret", secret},
+                    {"storage.location", rootLocation.toString()},
+                    {"app.logging.level", appLoggingLevel},
+                    {"sentry.logging.level", sentryLoggingLevel},
+                    {"sentry.dsn", dsn},
+                    {"ipfs.host", ipfsHost},
+                    {"spread.vis.location", visualizationLocation}
+                });
 
         };
     }
@@ -112,20 +123,5 @@ public class App {
         executor.initialize();
         return executor;
     }
-
-    @EventListener({ContextRefreshedEvent.class})
-    void contextRefreshedEvent(ContextRefreshedEvent event) {
-
-        System.out.println(
-                           Arrays.toString(event.getApplicationContext().getEnvironment().getActiveProfiles()));
-
-        System.out.println(
-                           event.getApplicationContext().getEnvironment().getProperty("server.port").toString());
-
-        System.out.println(env.getProperty("app.logging.level"));
-
-    }
-
-
 
 }
