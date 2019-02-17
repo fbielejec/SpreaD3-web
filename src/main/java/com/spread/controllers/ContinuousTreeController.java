@@ -3,6 +3,7 @@ package com.spread.controllers;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.LinkedList;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
@@ -91,14 +92,17 @@ public class ContinuousTreeController {
     public ResponseEntity<String> uploadTree(@RequestHeader(value = "Authorization") String authorizationHeader,
                                              @RequestParam(value = "treefile", required = true) MultipartFile file) {
 
+        String sessionId = "null";
+
         try {
 
             logger.log(ILogger.INFO, "Received authorization header", new String[][] {
                     {"token", authorizationHeader}
                 });
 
-            String sessionId = getSessionId(authorizationHeader);
+            sessionId = getSessionId(authorizationHeader);
 
+            // TODO : FSM (match)
             if(!(modelRepository.findBySessionId(sessionId) == null)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Session with that id already exists.");
             };
@@ -107,10 +111,10 @@ public class ContinuousTreeController {
 
             storageService.createSubdirectory(sessionId);
             storageService.store(sessionId, file);
-            // logger.log("tree file " + filename + " successfully persisted.", ILogger.INFO);
 
-            ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity(storageService.loadAsResource(sessionId, filename).getFile().getAbsolutePath(),
-                                                                                          new SessionEntity(sessionId));
+            ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity(storageService.loadAsResource(sessionId, filename).getFile().getAbsolutePath(), new SessionEntity(sessionId));
+
+            // logger.log(ILogger.INFO, "HERE");
 
             RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
 
@@ -123,20 +127,33 @@ public class ContinuousTreeController {
 
             modelRepository.save(continuousTreeModel);
 
-            // logger.log("continuousTreeModelEntity with id " + continuousTreeModel.getId() + " successfully persisted.",
-            //            ILogger.INFO);
-
-            // logger.log(atts.size() + " attributes successfully persisted.", ILogger.INFO);
+            logger.log(ILogger.INFO, "tree file successfully persisted", new String[][] {
+                    {"sessionId", sessionId},
+                    {"filename", filename},
+                    {"numberOfAttributes", String.valueOf(atts.size())},
+                });
 
             HttpHeaders responseHeaders = new HttpHeaders();
             responseHeaders.set("Location", sessionId);
             return new ResponseEntity<>(responseHeaders, HttpStatus.CREATED);
-        } catch (IOException | ImportException e) {
-            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         } catch (SignatureException e) {
-            // logger.log(Utils.getStackTrace(e), ILogger.ERROR);
+            logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (IOException | ImportException e) {
+
+            String message = Optional.ofNullable(e.getMessage()).orElse("Exception encountered when importing tree file");
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"message", message},
+                    {"sessionId", sessionId},
+                });
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(message);
+        } catch (SpreadException e) {
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                });
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 

@@ -8,11 +8,39 @@ public abstract class AbstractLogger implements ILogger {
         this.nextLogger = nextLogger;
     }
 
+    public void log(Integer level, String message) {
+        this.doLog(level, message);
+        if (nextLogger != null) {
+            nextLogger.log(level, message);
+        }
+    }
+
     public void log(Integer level, String message, String[][] meta) {
         this.doLog(level, message, meta);
         if (nextLogger != null) {
             nextLogger.log(level, message, meta);
         }
     }
+
+    public void log(Integer level, Exception e, String[][] meta) {
+        this.doLog(level, e, meta);
+        if (nextLogger != null) {
+            nextLogger.log(level, e, meta);
+        }
+    }
+
+    public void log(Integer level, Exception e) {
+        this.doLog(level, e);
+        if (nextLogger != null) {
+            nextLogger.log(level, e);
+        }
+    }
+
+    // public static String getStackTrace(Exception e) {
+    //     StringWriter sw = new StringWriter();
+    //     PrintWriter pw = new PrintWriter(sw);
+    //     e.printStackTrace(pw);
+    //     return sw.toString();
+    // }
 
 }
