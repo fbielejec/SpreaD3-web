@@ -6,6 +6,12 @@ notifications:
   email:
     on_success: change
     on_failure: change
+before_script:
+  - wget https://dist.ipfs.io/ipfs-update/v1.5.2/ipfs-update_v1.5.2_linux-amd64.tar.gz -O ipfs-update.tar.gz
+  - tar -xzf ipfs-update.tar.gz
+  - ipfs-update/ipfs-update install latest
+  - ipfs init
+  - ipfs daemon > /dev/null &
 env:
   global:
   - secure: CyjgBKtm8WMXXf69GR67MO7wNSF2DnlcTja7mS5fWQuElk4060jJXtP06ShAdJSP6MEQcyMROvVzjszFN2JHCfPCSZgHwTrrmoHdOZamkL+/5SO2oWstMg3qBwmSAeRgAYwh7cupMV9k8BpduWhHGsj7D9YLx0KnyvX9vjKMTZKUabzOJVtf9HbAkfAh54KEIYH/WZcbhiYAYkBM70yIRuYecBsA3eYoczEWBFRjxvFOcZ9wEiHkc9rInsuRT3U9gSlZ9VSa89yvfud9DfibxkAj8IR2Mw2ka5ZoSGyH705k9tuz3cBzv95QqTuvng1MgRJyANHfzztoHCCoud58I2OCyP8PmhIuPOIa5nQb8DtzV6MX2FxEFo2MX4+Opw9cwKWlKm4eAcD2JdT8/sw1GOZUKp/sxNDbdaZFz81qPA/JWnWQPc5aee4V+/XtDSZTQvEnwSbmlHUf2euicEeq5i0h/8X1wiTohGd07z0MwBH0sbtVPuBDZi7YmFrN3omGOVmXOzZlKdIpjIK84FO1lFjr1Yxn0vZB3Lzmht24Gh59xICvrW3dBxqLWyUr7cI1V8CqZcLjDNj8XI4PVpX2EJvbKSsTERndvwXKLheD5yTgdiWQQJjKKRGg/F2Hdvn0D11R4RE4beiXr/Nt9LitbuAgBFe9ex2ZUkQcOcIog50=

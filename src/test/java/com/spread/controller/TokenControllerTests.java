@@ -19,7 +19,9 @@ import org.springframework.web.context.WebApplicationContext;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(properties = {
-        "spring.profiles.active=test"
+        "spring.profiles.active=test",
+        "log.file.path=/logs",
+
     })
 public class TokenControllerTests {
 
