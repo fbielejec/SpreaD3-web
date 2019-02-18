@@ -27,6 +27,12 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @EnableAsync
 public class App {
 
+    @Value("${log.file.path}")
+    private String logFilePath;
+
+    @Value("${log.file.name}")
+    private String logFileName;
+
     @Value("${app.logging.level}")
     private String appLoggingLevel;
 
@@ -99,17 +105,19 @@ public class App {
 
             continuousTreeController.init(logger);
 
-            logger.log(ILogger.ERROR, "Application rebooted!", new String[][] {
+            logger.log(ILogger.WARN, "Application rebooted!", new String[][] {
                     {"spring.profiles.active", activeProfile},
                     {"secret", secret},
                     {"storage.location", rootLocation.toString()},
                     {"app.logging.level", appLoggingLevel},
+                    {"log.file.path", logFilePath},
+                    {"log.file.name", logFileName},
                     {"sentry.logging.level", sentryLoggingLevel},
                     {"sentry.dsn", dsn},
                     {"ipfs.host", ipfsHost},
                     {"spread.vis.location", visualizationLocation}
-                });
 
+                });
         };
     }
 

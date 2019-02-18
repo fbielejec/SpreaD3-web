@@ -23,7 +23,11 @@ REST Web Services to SpreaD3, capable of generating links with on-line visualisa
 
 ## Test
 
+* run tests once
 mvn test
+
+* rerun tests on code changes
+mvn fizzed-watcher:run
 
 ## Dev
 
