@@ -11,12 +11,6 @@ import com.spread.utils.TokenUtils;
 
 import org.junit.Test;
 
-// @RunWith(SpringRunner.class)
-// @SpringBootTest(classes = App.class,
-//                 properties = {
-//                     "spring.profiles.active=test",
-//                     "log.file.path=/logs",
-//                 })
 public class TokenUtilsTests {
 
     @Test

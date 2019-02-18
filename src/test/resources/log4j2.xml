@@ -1,16 +1,47 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
-<log4j:configuration debug="false" xmlns:log4j='http://jakarta.apache.org/log4j/'>
 
-    <appender name="console" class="org.apache.log4j.ConsoleAppender">
-        <layout class="org.apache.log4j.PatternLayout">
-            <param name="ConversionPattern" value="%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n"/>
-        </layout>
-    </appender>
+<Configuration>
 
-    <root>
-        <level value="OFF"/>
-        <appender-ref ref="console"/>
-    </root>
+<!-- <appender name="console" class="org.apache.log4j.ConsoleAppender"> -->
+<!--   <layout class="org.apache.log4j.PatternLayout"> -->
+<!--     <param name="ConversionPattern" value="%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n"/> -->
+<!--   </layout> -->
+<!-- </appender> -->
 
-</log4j:configuration>
+<!-- <root> -->
+<!--   <level value="OFF"/> -->
+<!--   <appender-ref ref="console"/> -->
+<!-- </root> -->
+
+<Properties>
+
+  <Property name="APP_LOG_LEVEL">${bundle:application:app.logging.level}</Property>
+
+  <Property name="CONSOLE_LOG_PATTERN">
+    %highlight{${LOG_LEVEL_PATTERN:-%5p}}{FATAL=bg_red, ERROR=red, WARN=yellow, INFO=green, DEBUG=blue} %m %n
+  </Property>
+
+</Properties>
+
+<Appenders>
+
+  <Console name="ConsoleAppender" target="SYSTEM_OUT" follow="true">
+    <PatternLayout pattern="${CONSOLE_LOG_PATTERN}"/>
+  </Console>
+
+</Appenders>
+
+<Loggers>
+
+  <Logger name="AppLogger" level="${APP_LOG_LEVEL}" additivity="false">
+    <AppenderRef ref="ConsoleAppender"/>
+  </Logger>
+
+  <!-- everything not logged by the AppLogger  -->
+  <Root level="ERROR">
+    <AppenderRef ref="ConsoleAppender" level="ERROR"/>
+  </Root>
+
+</Loggers>
+
+</Configuration>

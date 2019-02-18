@@ -21,6 +21,7 @@ import org.springframework.web.context.WebApplicationContext;
 @SpringBootTest(properties = {
         "spring.profiles.active=test",
         "log.file.path=/logs",
+        "storage.location=/spread-storage"
     })
 public class TokenControllerTests {
 

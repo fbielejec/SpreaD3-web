@@ -10,6 +10,7 @@ import org.springframework.test.context.junit4.SpringRunner;
                 properties = {
                     "spring.profiles.active=test",
                     "log.file.path=/logs",
+                    "storage.location=/spread-storage"
                 })
 public class AppTests {
 
