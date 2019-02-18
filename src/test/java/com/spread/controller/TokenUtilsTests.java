@@ -7,20 +7,16 @@ import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
-import com.spread.App;
 import com.spread.utils.TokenUtils;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = App.class,
-                properties = {
-                    "spring.profiles.active=test",
-                    "log.file.path=/logs",
-                })
+// @RunWith(SpringRunner.class)
+// @SpringBootTest(classes = App.class,
+//                 properties = {
+//                     "spring.profiles.active=test",
+//                     "log.file.path=/logs",
+//                 })
 public class TokenUtilsTests {
 
     @Test

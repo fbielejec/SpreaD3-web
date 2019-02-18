@@ -27,6 +27,9 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @EnableAsync
 public class App {
 
+    @Value("${server.port}")
+    private Integer port;
+
     @Value("${log.file.path}")
     private String logFilePath;
 
@@ -107,6 +110,7 @@ public class App {
 
             logger.log(ILogger.WARN, "Application rebooted!", new String[][] {
                     {"spring.profiles.active", activeProfile},
+                    {"server.port", port.toString()},
                     {"secret", secret},
                     {"storage.location", rootLocation.toString()},
                     {"app.logging.level", appLoggingLevel},
