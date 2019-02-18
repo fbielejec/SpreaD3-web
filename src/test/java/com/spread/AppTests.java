@@ -8,9 +8,9 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = App.class,
                 properties = {
-        "spring.profiles.active=test",
-        "log.file.path=/logs",
-    })
+                    "spring.profiles.active=test",
+                    "log.file.path=/logs",
+                })
 public class AppTests {
 
     @Test
