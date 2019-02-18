@@ -32,13 +32,7 @@ public class DefaultLogger extends AbstractLogger {
                                         meta);
 
         String json = new GsonBuilder().create().toJson(map);
-
-        Match(level).of(Case($(INFO), l -> run(() -> logger.info(json))),
-                        Case($(DEBUG), l -> run(() -> logger.debug(json))),
-                        Case($(WARN), l -> run(() -> logger.warn(json))),
-                        Case($(ERROR), l -> run(() -> logger.error(json))),
-                        Case($(), l -> run(() -> logger.info(json))));
-
+        logWithLevel(level, json);
     }
 
     @Override
@@ -58,8 +52,7 @@ public class DefaultLogger extends AbstractLogger {
                                         meta);
 
         String json = new GsonBuilder().create().toJson(map);
-
-        logger.error(json);
+        logWithLevel(level, json);
     }
 
     @Override
@@ -67,6 +60,14 @@ public class DefaultLogger extends AbstractLogger {
         doLog(level, e, null);
     }
 
+    private void logWithLevel (Integer level, String json) {
+                Match(level).of(Case($(INFO), l -> run(() -> logger.info(json))),
+                        Case($(DEBUG), l -> run(() -> logger.debug(json))),
+                        Case($(WARN), l -> run(() -> logger.warn(json))),
+                        Case($(ERROR), l -> run(() -> logger.error(json))),
+                        Case($(), l -> run(() -> logger.info(json))));
+
+    }
 
     /**
      * Merges two maps hierarchically eft-to-right

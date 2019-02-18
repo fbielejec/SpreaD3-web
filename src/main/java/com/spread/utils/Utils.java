@@ -47,7 +47,7 @@ public class Utils {
         return id[id.length - 1];
     }// END: splitString
 
-    public static RootedTree importRootedTree(String treefile) throws IOException, ImportException, SpreadException {
+    public static RootedTree importRootedTree(String treefile) throws IOException, ImportException {
         TreeImporter importer = new NexusImporter(new FileReader(treefile));
         // RootedTree rootedTree;
         // if(importer.hasTree()) {

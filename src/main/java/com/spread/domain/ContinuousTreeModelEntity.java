@@ -14,20 +14,23 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 @Entity
 @Table(name = "continuous_tree_models")
 public class ContinuousTreeModelEntity {
 
     public enum Status  {
+        EXCEPTION_OCCURED,
         GENERATING_OUTPUT, OUTPUT_READY,
         PUBLISHING_IPFS, IPFS_HASH_READY
     }
-    
+
     @Id
     @Column(name = "id", nullable = false)
     private String sessionId;
 
-    // use primary key of Session as the id	
+    // use primary key of Session as the id
     // delete corresponding session
     @OneToOne(cascade=CascadeType.ALL)
     @JoinColumn(name = "id")
@@ -60,21 +63,26 @@ public class ContinuousTreeModelEntity {
 
     @Column(name = "ipfs_hash", nullable = true)
     private String ipfsHash;;
-    
+
     @Column(name = "has_external_annotations", nullable = true)
     private Boolean hasExternalAnnotations;
 
+    @JsonManagedReference("tree-attributes")
     @OneToMany(mappedBy = "tree", cascade = CascadeType.ALL)
     private Set<AttributeEntity> attributes;
 
     @Enumerated(EnumType.STRING)
     private Status status;
-    
+
     public ContinuousTreeModelEntity() {
     }
 
     public ContinuousTreeModelEntity(String absolutePath, SessionEntity session) {
         this.treeFilename = absolutePath;
+        this.session = session;
+    }
+
+    public ContinuousTreeModelEntity(SessionEntity session) {
         this.session = session;
     }
 
