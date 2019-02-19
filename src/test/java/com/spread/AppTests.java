@@ -1,5 +1,6 @@
 package com.spread;
 
+import com.spread.services.storage.StorageService;
 import com.spread.services.visualization.VisualizationService;
 
 import org.junit.Test;
@@ -13,7 +14,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 @SpringBootTest(classes = App.class,
                 properties = {
                     // "spread.vis.location=/home/filip/spread-vis",
-                    "storage.location=/home/filip/spread-storage"
+                    // "storage.location=/home/filip/spread-storage"
                 })
 public class AppTests {
 
@@ -23,6 +24,9 @@ public class AppTests {
     // @Autowired
     @MockBean
     private VisualizationService visualizationService;
+
+    @MockBean
+    private StorageService storageService;
 
     // @Bean
     // @Primary
