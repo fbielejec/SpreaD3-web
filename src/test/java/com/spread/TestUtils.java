@@ -1,4 +1,4 @@
-package com.spread.utils;
+package com.spread;
 
 import java.io.File;
 import java.io.IOException;
