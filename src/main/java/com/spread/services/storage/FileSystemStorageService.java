@@ -7,6 +7,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
+import com.spread.loggers.AbstractLogger;
+import com.spread.loggers.ILogger;
+
 import org.apache.commons.io.FileUtils;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -19,10 +22,18 @@ public class FileSystemStorageService implements StorageService {
 
     private Boolean isInit = false;
     private Path rootLocation;
+    private AbstractLogger logger;
 
     @Override
-    public void init(Path rootLocation) {
+    public void init(Path rootLocation, AbstractLogger logger) {
+
         this.rootLocation = rootLocation;
+        this.logger = logger;
+
+        logger.log(ILogger.INFO, "Initialized storage service", new String[][]{
+                {"rootLocation", rootLocation.toString()}
+            });
+
         isInit = true;
     }
 

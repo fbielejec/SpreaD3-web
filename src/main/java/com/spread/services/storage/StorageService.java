@@ -4,12 +4,14 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
+import com.spread.loggers.AbstractLogger;
+
 import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface StorageService {
 
-    void init(Path rootLocation);
+    void init(Path rootLocation, AbstractLogger logger);
 
     void createRootDir() throws StorageException;
 

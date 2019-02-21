@@ -89,24 +89,11 @@ public class App {
     CommandLineRunner init() {
         return (args) -> {
 
-            HashMap<String, String> opts = new HashMap<String, String>() {
+            AbstractLogger logger = loggingService.init(activeProfile, sentryLoggingLevel, dsn, new HashMap<String, String>() {
                     private static final long serialVersionUID = 1L;
                     {
                         put("stacktrace.app.packages", stackTraceAppPackages);
-                    }};
-
-            AbstractLogger logger = loggingService.init(activeProfile, sentryLoggingLevel, dsn, opts);
-
-            keyRepository.save(new KeyEntity(secret));
-
-            storageService.init(rootLocation);
-            storageService.deleteAll();
-            storageService.createRootDir();
-
-            ipfsService.init(ipfsHost);
-            visualizationService.init(visualizationLocation);
-
-            continuousTreeController.init(logger);
+                    }});
 
             logger.log(ILogger.WARN, "Application rebooted!", new String[][] {
                     {"spring.profiles.active", activeProfile},
@@ -122,6 +109,20 @@ public class App {
                     {"spread.vis.location", visualizationLocation}
 
                 });
+
+            keyRepository.save(new KeyEntity(secret));
+
+            if(!storageService.isInitialized()) {
+                storageService.init(rootLocation, logger);
+                storageService.deleteAll();
+                storageService.createRootDir();
+            }
+
+            ipfsService.init(ipfsHost);
+            visualizationService.init(visualizationLocation);
+
+            continuousTreeController.init(logger);
+
         };
     }
 

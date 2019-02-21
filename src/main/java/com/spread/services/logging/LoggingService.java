@@ -13,6 +13,18 @@ public class LoggingService {
 
     private Boolean isInit = false;
 
+    /**
+     * Production level logging.
+     * Initializes the chain of loggers, which
+     * currently means Sentry and log4j2 logging.
+     *
+     * @param activeProfile : active spring profile, Sentry logging will only be activated for the `production` profile
+     * @param sentryLogLevel : min logging level for Sentry
+     * @param dsn : Sentry DSN
+     * @param opts : additional Sentry options
+     *
+     * @return chained loggers.
+     */
     public AbstractLogger init(String activeProfile, String sentryLogLevel, String dsn, HashMap<String, String> opts) {
 
         DefaultLogger logger1 = new DefaultLogger();
@@ -23,7 +35,6 @@ public class LoggingService {
 
         return logger1;
     }
-
 
     /**
      * @return the isInit

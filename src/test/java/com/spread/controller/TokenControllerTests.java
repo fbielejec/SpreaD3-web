@@ -18,52 +18,41 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-
-// @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
-// @TestConfiguration
-// @ContextConfiguration
-@SpringBootTest(
-                properties = {
-        // "spread.vis.location=/home/filip/spread-vis",
-        // "storage.location=/home/filip/spread-storage"
-    })
-    public class TokenControllerTests {
+@SpringBootTest
+public class TokenControllerTests {
 
-        @Value("${secret}")
-        private String secret;
+    @Value("${secret}")
+    private String secret;
 
-        @Autowired
-        private WebApplicationContext webContext;
+    @Autowired
+    private WebApplicationContext webContext;
 
-        // @MockBean
-        // private VisualizationService visualizationService;
+    private MockMvc mockMvc;
 
-        private MockMvc mockMvc;
-
-        @Before
-        public void setupMockMvc() throws Exception {
-            mockMvc = MockMvcBuilders.webAppContextSetup(webContext) //
-                .build();
-        }
-
-        @Test
-        public void testRegularToken() throws Exception {
-            String sessionId = UUID.randomUUID().toString();
-            String token = TokenUtils.createJWT(secret, sessionId);
-
-            mockMvc.perform(MockMvcRequestBuilders.get("/continuous/model").header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk());
-        }
-
-        @Test
-        public void testForgedToken() throws Exception {
-            String forgedSecret = "forged";
-            String sessionId = UUID.randomUUID().toString();
-            String token = TokenUtils.createJWT(forgedSecret, sessionId);
-
-            mockMvc.perform(MockMvcRequestBuilders.get("/continuous/model").header("Authorization", "Bearer " + token))
-                .andExpect(status().isUnauthorized());
-        }
-
+    @Before
+    public void setupMockMvc() throws Exception {
+        mockMvc = MockMvcBuilders.webAppContextSetup(webContext) //
+            .build();
     }
+
+    @Test
+    public void testRegularToken() throws Exception {
+        String sessionId = UUID.randomUUID().toString();
+        String token = TokenUtils.createJWT(secret, sessionId);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/continuous/model").header("Authorization", "Bearer " + token))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    public void testForgedToken() throws Exception {
+        String forgedSecret = "forged";
+        String sessionId = UUID.randomUUID().toString();
+        String token = TokenUtils.createJWT(forgedSecret, sessionId);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/continuous/model").header("Authorization", "Bearer " + token))
+            .andExpect(status().isUnauthorized());
+    }
+
+}
