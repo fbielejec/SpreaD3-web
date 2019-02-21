@@ -700,6 +700,12 @@ public class ContinuousTreeController {
                             logger.log(ILogger.ERROR, e, new String[][] {
                                     {"sessionId", threadLocalSessionId}
                                 });
+                        } catch (SpreadException e) {
+                            continuousTreeModel.setStatus(ContinuousTreeModelEntity.Status.EXCEPTION_OCCURED);
+                            modelRepository.save(continuousTreeModel);
+                            logger.log(ILogger.ERROR, e, new String[][] {
+                                    {"sessionId", threadLocalSessionId}
+                                });
                         }
                     }
                 });

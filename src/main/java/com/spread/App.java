@@ -61,7 +61,7 @@ public class App {
     private String ipfsHost;
 
     @Value("${spread.vis.location}")
-    private String visualizationLocation;
+    private Path visualizationLocation;
 
     @Autowired
     private LoggingService loggingService;
@@ -106,11 +106,9 @@ public class App {
                     {"sentry.logging.level", sentryLoggingLevel},
                     {"sentry.dsn", dsn},
                     {"ipfs.host", ipfsHost},
-                    {"spread.vis.location", visualizationLocation}
+                    {"spread.vis.location", visualizationLocation.toString()}
 
                 });
-
-            keyRepository.save(new KeyEntity(secret));
 
             if(!storageService.isInitialized()) {
                 storageService.init(rootLocation, logger);
@@ -118,11 +116,13 @@ public class App {
                 storageService.createRootDir();
             }
 
+            if(!visualizationService.isInitialized()) {
+                visualizationService.init(visualizationLocation);
+            }
+
+            keyRepository.save(new KeyEntity(secret));
             ipfsService.init(ipfsHost);
-            visualizationService.init(visualizationLocation);
-
             continuousTreeController.init(logger);
-
         };
     }
 

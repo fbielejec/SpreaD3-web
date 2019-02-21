@@ -2,21 +2,24 @@ package com.spread.services.visualization;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+
+import com.spread.exceptions.SpreadException;
 
 import org.springframework.stereotype.Service;
 
 @Service
 public class D3VisualizationService implements VisualizationService {
 
-    private String visualizationLocation;
+    private Path visualizationLocation;
     private Boolean isInit = false;
 
     @Override
-    public void init(String visualizationLocation) {
+    public void init(Path visualizationLocation) throws SpreadException {
         this.visualizationLocation = visualizationLocation;
         if(!visualizationExists()) {
-            throw new VisualisationDirectoryNotFoundException(visualizationLocation);
+            throw new SpreadException("VisualisationDirectoryNotFoundException", new String [][] {
+                    {"directory", visualizationLocation.toString()}
+                });
         }
         isInit = true;
     }
@@ -24,20 +27,23 @@ public class D3VisualizationService implements VisualizationService {
     /**
      * @return the isInit
      */
+    @Override
     public Boolean isInitialized() {
         return isInit;
     }
 
     @Override
-    public Path getVisualisationDirectory() {
+    public Path getVisualisationDirectory() throws SpreadException {
         if(!visualizationExists()) {
-            throw new VisualisationDirectoryNotFoundException(visualizationLocation);
+            throw new SpreadException("VisualisationDirectoryNotFoundException", new String [][]{
+                    {"directory", visualizationLocation.toString()}
+                });
         }
-        return Paths.get(visualizationLocation);
+        return visualizationLocation;
     }
 
     private boolean visualizationExists () {
-        return Files.exists(Paths.get(visualizationLocation));
+        return Files.exists(visualizationLocation);
     }
 
 }
