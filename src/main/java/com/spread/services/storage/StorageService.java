@@ -1,9 +1,9 @@
 package com.spread.services.storage;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
+import com.spread.exceptions.SpreadException;
 import com.spread.loggers.AbstractLogger;
 
 import org.springframework.core.io.Resource;
@@ -13,7 +13,7 @@ public interface StorageService {
 
     void init(Path rootLocation, AbstractLogger logger);
 
-    void createRootDir() throws StorageException;
+    void createRootDir() throws SpreadException;
 
     Boolean isInitialized();
 
@@ -23,7 +23,7 @@ public interface StorageService {
      * @param  file to check
      * @return boolean value.
      */
-    boolean exists(MultipartFile file);
+    boolean exists(MultipartFile file) throws SpreadException;
 
     /**
      * Predicate whether a given file exist in a subdirectory
@@ -32,7 +32,7 @@ public interface StorageService {
      * @param  file to check for
      * @return boolean value.
      */
-    boolean exists(String subdirectory, MultipartFile file);
+    boolean exists(String subdirectory, MultipartFile file) throws SpreadException;
 
     /**
      * Predicate whether a given directory exist
@@ -51,7 +51,7 @@ public interface StorageService {
      *
      * @param file : file to store
      */
-    void store(MultipartFile file) throws StorageException;
+    void store(MultipartFile file) throws SpreadException;
 
     /**
      * stores a file in the subdirectory
@@ -59,7 +59,7 @@ public interface StorageService {
      * @param subdirectory : subdir to store the file in
      * @param file : file to store
      */
-    void store(String subdirectory, MultipartFile file) throws StorageException;
+    void store(String subdirectory, MultipartFile file) throws SpreadException;
 
     /**
      * Writes a content to a file in the root directory
@@ -67,7 +67,7 @@ public interface StorageService {
      * @param filename : filename to write to
      * @param content : array of bytes to write
      */
-    void write(String filename, byte[] content) throws IOException;
+    void write(String filename, byte[] content) throws SpreadException;
 
     /**
      * Writes a content to a file in a subdirectory
@@ -76,7 +76,7 @@ public interface StorageService {
      * @param filename : filename to write to
      * @param content : array of bytes to write
      */
-    void write(String subdirectory, String filename, byte[] content) throws IOException;
+    void write(String subdirectory, String filename, byte[] content) throws SpreadException;
 
     /**
      * copies the content of a directory to the root subdirectory
@@ -84,7 +84,7 @@ public interface StorageService {
      *
      * @param source : directory with the content to copy
      */
-    void copy(Path source);
+    void copy(Path source) throws SpreadException;
 
     /**
      * copies the content of a directory to a subdirectory
@@ -92,17 +92,17 @@ public interface StorageService {
      * @param subdirectory : subdir to copy to (destination)
      * @param source : directory with the content to copy
      */
-    void copy(String subdirectory, Path source);
+    void copy(String subdirectory, Path source) throws SpreadException;
 
     Path load(String filename);
 
     Path load(String subdirectory, String filename);
 
-    Stream<Path> loadAll();
+    Stream<Path> loadAll() throws SpreadException;
 
-    Resource loadAsResource(String filename);
+    Resource loadAsResource(String filename) throws SpreadException;
 
-    Resource loadAsResource(String subdirectory, String filename);
+    Resource loadAsResource(String subdirectory, String filename) throws SpreadException;
 
     void delete(String filename);
 
@@ -110,7 +110,7 @@ public interface StorageService {
 
     void deleteAll();
 
-    void createSubdirectory(String subdirectory);
+    void createSubdirectory(String subdirectory) throws SpreadException;
 
     void deleteSubdirectory(String subdirectory);
 

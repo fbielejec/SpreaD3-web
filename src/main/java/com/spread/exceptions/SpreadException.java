@@ -25,6 +25,14 @@ public class SpreadException extends Exception {
         this.type = Type.GENERAL_EXCEPTION;
     }
 
+    public SpreadException(Type type, String message) {
+        this.message = message;
+        this.meta = new String[][] {
+            {"timestamp", Instant.now().toString()},
+        };
+        this.type = type;
+    }
+
     public SpreadException(String message) {
         this.message = message;
         this.type = Type.GENERAL_EXCEPTION;

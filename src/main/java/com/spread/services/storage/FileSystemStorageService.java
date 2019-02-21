@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.stream.Stream;
 
+import com.spread.exceptions.SpreadException;
 import com.spread.loggers.AbstractLogger;
 import com.spread.loggers.ILogger;
 
@@ -38,12 +40,16 @@ public class FileSystemStorageService implements StorageService {
     }
 
     @Override
-    public void createRootDir() {
+    public void createRootDir() throws SpreadException {
         try {
             Files.createDirectory(rootLocation);
         } catch (IOException e) {
             isInit = false;
-            throw new StorageException("Could not initialize storage", e);
+            throw new SpreadException(SpreadException.Type.STORAGE_EXCEPTION,
+                                      "Could not initialize storage",
+                                      new String[][] {
+                                          {"reason", e.getMessage()}
+                                      });
         }
     }
 
@@ -51,7 +57,7 @@ public class FileSystemStorageService implements StorageService {
      * {@inheritDoc}
      */
     @Override
-    public boolean exists(MultipartFile file) {
+    public boolean exists(MultipartFile file) throws SpreadException {
         return exists(null, file);
     }
 
@@ -59,20 +65,19 @@ public class FileSystemStorageService implements StorageService {
      * {@inheritDoc}
      */
     @Override
-    public boolean exists(String subdirectory, MultipartFile file) {
-
+    public boolean exists(String subdirectory, MultipartFile file) throws SpreadException {
         String filename = file.getOriginalFilename();
-
         try {
-
             Path path = (subdirectory == null) ? load(filename) : load(subdirectory, filename);
             Resource resource = new UrlResource(path.toUri());
             return resource.exists();
-
         } catch (MalformedURLException e) {
-            throw new StorageFileNotFoundException("Could not resolve if file: " + filename + " exists.", e);
+            throw new SpreadException(SpreadException.Type.STORAGE_EXCEPTION,
+                                      "Could not resolve if file: " + filename + " exists.",
+                                      new String[][] {
+                                          {"reason", e.getMessage()}
+                                      });
         }
-
     }
 
     /**
@@ -88,7 +93,7 @@ public class FileSystemStorageService implements StorageService {
      * {@inheritDoc}
      */
     @Override
-    public void store(MultipartFile file) {
+    public void store(MultipartFile file) throws SpreadException {
         store(null, file);
     }
 
@@ -96,12 +101,12 @@ public class FileSystemStorageService implements StorageService {
      * {@inheritDoc}
      */
     @Override
-    public void store(String subdirectory, MultipartFile file) throws StorageException {
+    public void store(String subdirectory, MultipartFile file) throws SpreadException {
         String filename = file.getOriginalFilename();
         try {
 
             if (file.isEmpty()) {
-                throw new StorageException("Failed to store empty file " + filename);
+                throw new SpreadException(SpreadException.Type.STORAGE_EXCEPTION, "Failed to store empty file " + filename);
             }
 
             if(subdirectory == null) {
@@ -112,16 +117,20 @@ public class FileSystemStorageService implements StorageService {
             }
 
         } catch (IOException e) {
-            throw new StorageException("Failed to store file " + file.getOriginalFilename(), e);
+            String message = Optional.ofNullable(e.getMessage()).orElse("null");
+            throw new SpreadException(SpreadException.Type.STORAGE_EXCEPTION,
+                                      "Failed to store file " + file.getOriginalFilename(),
+                                      new String[][] {
+                                          {"reason", message}
+                                      });
         }
-
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void write(String subdirectory, String filename, byte[] content) {
+    public void write(String subdirectory, String filename, byte[] content) throws SpreadException {
         try {
 
             Path location = null;
@@ -132,9 +141,13 @@ public class FileSystemStorageService implements StorageService {
             }
 
             Files.write(location.resolve(filename), content);
-
         } catch (IOException e) {
-            throw new StorageException("Failed to write file " + filename, e);
+            String message = Optional.ofNullable(e.getMessage()).orElse("null");
+            throw new SpreadException(SpreadException.Type.STORAGE_EXCEPTION,
+                                      "Failed to write file " + filename,
+                                      new String[][] {
+                                          {"reason", message}
+                                      });
         }
     }
 
@@ -142,7 +155,7 @@ public class FileSystemStorageService implements StorageService {
      * {@inheritDoc}
      */
     @Override
-    public void write(String filename, byte[] content) {
+    public void write(String filename, byte[] content) throws SpreadException {
         write(null, filename, content);
     }
 
@@ -150,7 +163,7 @@ public class FileSystemStorageService implements StorageService {
      * {@inheritDoc}
      */
     @Override
-    public void copy(Path source) {
+    public void copy(Path source) throws SpreadException {
         copy (null, source);
     }
 
@@ -158,7 +171,7 @@ public class FileSystemStorageService implements StorageService {
      * {@inheritDoc}
      */
     @Override
-    public void copy(String subdirectory, Path source) {
+    public void copy(String subdirectory, Path source) throws SpreadException {
         try {
             Path dest = null;
             if (subdirectory == null) {
@@ -168,10 +181,14 @@ public class FileSystemStorageService implements StorageService {
             }
             FileUtils.copyDirectory(source.toFile(), dest.toFile());
         } catch (IOException e) {
-            throw new StorageException("Failed to copy content from " + source.toString() + " into " + subdirectory, e);
+            String message = Optional.ofNullable(e.getMessage()).orElse("null");
+            throw new SpreadException(SpreadException.Type.STORAGE_EXCEPTION,
+                                      "Failed to copy content from " + source.toString() + " into " + subdirectory,
+                                      new String[][] {
+                                          {"reason", message}
+                                      });
         }
     }
-
 
     @Override
     public Path load(String filename) {
@@ -190,12 +207,12 @@ public class FileSystemStorageService implements StorageService {
     }
 
     @Override
-    public Resource loadAsResource(String filename) {
+    public Resource loadAsResource(String filename) throws SpreadException {
         return loadAsResource(null, filename);
     }
 
     @Override
-    public Resource loadAsResource(String subdirectory, String filename) {
+    public Resource loadAsResource(String subdirectory, String filename) throws SpreadException {
 
         try {
 
@@ -205,25 +222,32 @@ public class FileSystemStorageService implements StorageService {
             if (resource.exists() || resource.isReadable()) {
                 return resource;
             } else {
-                throw new StorageFileNotFoundException("Could not read file: " + filename);
-
+                throw new SpreadException(SpreadException.Type.STORAGE_EXCEPTION,
+                                          "Could not read file: " + filename);
             }
-
         } catch (MalformedURLException e) {
-            throw new StorageFileNotFoundException("Could not read file: " + filename, e);
+            String message = Optional.ofNullable(e.getMessage()).orElse("null");
+            throw new SpreadException(SpreadException.Type.STORAGE_EXCEPTION,
+                                      "Could not read file: " + filename,
+                                      new String[][] {
+                                          {"reason", message}
+                                      });
         }
-
     }
 
     @Override
-    public Stream<Path> loadAll() {
+    public Stream<Path> loadAll() throws SpreadException {
         try {
             return Files.walk(this.rootLocation, 1).filter(path -> !path.equals(this.rootLocation))
                 .map(path -> this.rootLocation.relativize(path));
         } catch (IOException e) {
-            throw new StorageException("Failed to read stored files", e);
+            String message = Optional.ofNullable(e.getMessage()).orElse("null");
+            throw new SpreadException(SpreadException.Type.STORAGE_EXCEPTION,
+                                      "Failed to store files ",
+                                      new String[][] {
+                    {"reason", message}
+                });
         }
-
     }
 
     @Override
@@ -236,7 +260,6 @@ public class FileSystemStorageService implements StorageService {
         Path path = (subdirectory == null) ? load(filename) : load(subdirectory, filename);
         FileSystemUtils.deleteRecursively(path.toFile());
     }
-
 
     @Override
     public void deleteAll() {
@@ -259,14 +282,17 @@ public class FileSystemStorageService implements StorageService {
     }
 
     @Override
-    public void createSubdirectory(String subdirectory) {
+    public void createSubdirectory(String subdirectory) throws SpreadException {
         try {
-
             Path childLocation = rootLocation.resolve(subdirectory);
             Files.createDirectory(childLocation);
-
         } catch (IOException e) {
-            throw new StorageException("Failed to create subdirectory: " + subdirectory, e);
+            String message = Optional.ofNullable(e.getMessage()).orElse("null");
+            throw new SpreadException(SpreadException.Type.STORAGE_EXCEPTION,
+                                      "Failed to create subdirectory: " + subdirectory,
+                                      new String[][] {
+                                          {"reason", message}
+                                      });
         }
     }
 

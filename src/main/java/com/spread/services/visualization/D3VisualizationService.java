@@ -29,7 +29,7 @@ public class D3VisualizationService implements VisualizationService {
                 });
         }
 
-        logger.log(ILogger.INFO, "Initialized storage service", new String[][]{
+        logger.log(ILogger.INFO, "Initialized visualization service", new String[][]{
                 {"visualizationLocation", visualizationLocation.toString()}
             });
 
