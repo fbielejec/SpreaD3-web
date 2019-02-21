@@ -40,13 +40,9 @@ public class TestConfiguration {
     @Bean
     @Primary
     public VisualizationService visualizationServiceTest() throws SpreadException {
-
         Path visualizationLocation = Paths.get(getClass().getClassLoader().getResource("spread-vis").getPath());
-
         VisualizationService visualizationService = new D3VisualizationService();
-        visualizationService.init(visualizationLocation);
-
-        // return Mockito.mock(VisualizationService.class);
+        visualizationService.init(visualizationLocation, logger);
         return visualizationService;
     }
 

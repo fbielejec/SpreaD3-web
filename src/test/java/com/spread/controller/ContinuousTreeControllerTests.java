@@ -11,6 +11,7 @@ import java.nio.file.Paths;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
 import com.spread.TestUtils;
 import com.spread.domain.ContinuousTreeModelEntity;
@@ -91,15 +92,6 @@ public class ContinuousTreeControllerTests {
         mockMvc.perform(MockMvcRequestBuilders.put("/continuous/output").header("Authorization", "Bearer " + token))
             .andExpect(status().isAccepted());
 
-        // String resp = mockMvc.perform(MockMvcRequestBuilders.get("/continuous/model")
-        //                               .header("Authorization", "Bearer " + token)
-        //                               .contentType(MediaType.APPLICATION_JSON)
-        //                               )
-        //     .andReturn()
-        //     .getResponse()
-        //     .getContentAsString();
-
-
         // poll the status until done
         String status = Stream
             .iterate("", s -> getStatus(token))
@@ -109,8 +101,26 @@ public class ContinuousTreeControllerTests {
 
         Assert.assertEquals(status, ContinuousTreeModelEntity.Status.OUTPUT_READY.toString());
 
-        // TODO : ipfs publish and test
+        mockMvc.perform(MockMvcRequestBuilders.put("/continuous/ipfs").header("Authorization", "Bearer " + token))
+            .andExpect(status().isAccepted());
 
+        // poll the status until done
+        status = Stream
+            .iterate("", s -> getStatus(token))
+            .filter(s -> s.equalsIgnoreCase(ContinuousTreeModelEntity.Status.IPFS_HASH_READY.toString()))
+            .findFirst()
+            .get();
+
+        String resp = mockMvc.perform(MockMvcRequestBuilders.get("/continuous/model")
+                                      .header("Authorization", "Bearer " + token)
+                                      .contentType(MediaType.APPLICATION_JSON))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        ContinuousTreeModelEntity model = new GsonBuilder().create().fromJson(resp, ContinuousTreeModelEntity.class);
+
+        Assert.assertNotNull(model.getIpfsHash());
     }
 
     private String getToken() throws UnsupportedEncodingException, Exception {

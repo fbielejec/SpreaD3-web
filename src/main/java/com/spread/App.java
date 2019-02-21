@@ -28,7 +28,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 public class App {
 
     @Value("${server.port}")
-    private Integer port;
+    private Long port;
 
     @Value("${log.file.path}")
     private String logFilePath;
@@ -117,7 +117,7 @@ public class App {
             }
 
             if(!visualizationService.isInitialized()) {
-                visualizationService.init(visualizationLocation);
+                visualizationService.init(visualizationLocation, logger);
             }
 
             keyRepository.save(new KeyEntity(secret));
