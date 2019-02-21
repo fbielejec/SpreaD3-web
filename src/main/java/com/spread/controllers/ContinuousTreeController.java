@@ -2,6 +2,7 @@ package com.spread.controllers;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Optional;
 import java.util.Set;
@@ -40,6 +41,7 @@ import com.spread.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -90,7 +92,7 @@ public class ContinuousTreeController {
      * Reuploading tree file with the same sessionId is not possible
      * clients carrying the token should first delete the entity by calling the corresponding endpoint and ask for a new token.
      * */
-    @RequestMapping(path = "/tree", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(path = "/tree", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> uploadTree(HttpServletRequest request,
                                              @RequestHeader(value = "Authorization") String authorizationHeader,
                                              @RequestParam(value = "treefile", required = true) MultipartFile file) {
@@ -157,7 +159,7 @@ public class ContinuousTreeController {
 
     }
 
-    @RequestMapping(path = "/tree", method = RequestMethod.DELETE, produces = "application/json")
+    @RequestMapping(path = "/tree", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> deleteTree(@RequestHeader(value = "Authorization") String authorizationHeader) {
 
         String sessionId = "null";
@@ -196,7 +198,7 @@ public class ContinuousTreeController {
         }
     }
 
-    @RequestMapping(path = "/attributes", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(path = "/attributes", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Set<String>> attributes(@RequestHeader(value = "Authorization") String authorizationHeader) {
 
         String sessionId = "null";
@@ -225,7 +227,7 @@ public class ContinuousTreeController {
         }
     }
 
-    @RequestMapping(path = "/hpd-levels", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(path = "/hpd-levels", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Set<String>> hpdLevels(@RequestHeader(value = "Authorization") String authorizationHeader)
         throws IOException, ImportException {
 
@@ -254,7 +256,7 @@ public class ContinuousTreeController {
         }
     }
 
-    @RequestMapping(path = "/hpd-level", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(path = "/hpd-level", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> setHpdLevel(@RequestHeader(value = "Authorization") String authorizationHeader,
                                               @RequestParam(value = "hpd-level", required = true) Integer hpdLevel) {
 
@@ -299,7 +301,7 @@ public class ContinuousTreeController {
         }
     }
 
-    @RequestMapping(value = { "/coordinates/y", "/coordinates/latitude" }, method = RequestMethod.PUT , produces = "application/json")
+    @RequestMapping(value = { "/coordinates/y", "/coordinates/latitude" }, method = RequestMethod.PUT , produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> setyCoordinates(@RequestHeader(value = "Authorization") String authorizationHeader,
                                                   @RequestParam(value = "attribute", required = true) String attribute) {
 
@@ -332,7 +334,7 @@ public class ContinuousTreeController {
         }
     }
 
-    @RequestMapping(value = { "/coordinates/x", "/coordinates/longitude" }, method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(value = { "/coordinates/x", "/coordinates/longitude" }, method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> setxCoordinates(@RequestHeader(value = "Authorization") String authorizationHeader,
                                                   @RequestParam(value = "attribute", required = true) String attribute) {
 
@@ -365,7 +367,7 @@ public class ContinuousTreeController {
         }
     }
 
-    @RequestMapping(path = "/external-annotations", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(path = "/external-annotations", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> setHasExternalAnnotations(
                                                             @RequestHeader(value = "Authorization") String authorizationHeader,
                                                             @RequestParam(value = "has-external-annotations", required = true) Boolean hasExternalAnnotations) {
@@ -398,7 +400,7 @@ public class ContinuousTreeController {
         }
     }
 
-    @RequestMapping(path = "/mrsd", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(path = "/mrsd", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> setMrsd(@RequestHeader(value = "Authorization") String authorizationHeader,
                                           @RequestParam(value = "mrsd") String mrsd) {
 
@@ -441,7 +443,7 @@ public class ContinuousTreeController {
         }
     }
 
-    @RequestMapping(path = "/timescale-multiplier", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(path = "/timescale-multiplier", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> setTimescaleMultiplier(
                                                          @RequestHeader(value = "Authorization") String authorizationHeader,
                                                          @RequestParam(value = "timescale-multiplier", required = true) Double timescaleMultiplier) {
@@ -489,7 +491,7 @@ public class ContinuousTreeController {
         }
     }
 
-    @RequestMapping(path = "/geojson", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(path = "/geojson", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> uploadGeojson(@RequestHeader(value = "Authorization") String authorizationHeader,
                                                 @RequestParam(value = "geojsonfile", required = true) MultipartFile file)  {
 
@@ -504,16 +506,12 @@ public class ContinuousTreeController {
             sessionId = getSessionId(authorizationHeader);
             String filename = file.getOriginalFilename();
 
-            HttpStatus status = HttpStatus.OK;
             if (storageService.exists(sessionId, file)) {
-
                 storageService.delete(sessionId, filename);
                 logger.log(ILogger.INFO, "Deleting previously persisted geojson file", new String[][] {
                         {"sessionId", sessionId},
                         {"filename", filename}
                     });
-
-                status = HttpStatus.CREATED;
             }
 
             storageService.store(sessionId, file);
@@ -529,7 +527,7 @@ public class ContinuousTreeController {
                     {"filename", filename}
                 });
 
-            return new ResponseEntity<>(status);
+            return new ResponseEntity<>(HttpStatus.CREATED);
         } catch (SignatureException e) {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
@@ -568,7 +566,7 @@ public class ContinuousTreeController {
     //		}
     //	}
 
-    @RequestMapping(path = "/output", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(path = "/output", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> getOutput(HttpServletRequest request,
                                             @RequestHeader(value = "Authorization") String authorizationHeader) {
 
@@ -644,7 +642,7 @@ public class ContinuousTreeController {
         }
     }
 
-    @RequestMapping(path = "/ipfs", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(path = "/ipfs", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> putIpfs(HttpServletRequest request,
                                           @RequestHeader(value = "Authorization") String authorizationHeader) {
 
@@ -720,7 +718,8 @@ public class ContinuousTreeController {
         }
     }
 
-    @RequestMapping(path = "/ipfs", method = RequestMethod.GET, produces = "application/json")
+    // TODO : return JSON {"hash": "<ipfs-hash>"}
+    @RequestMapping(path = "/ipfs", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> getIpfsHash(@RequestHeader(value = "Authorization") String authorizationHeader) {
 
         String sessionId = "null";
@@ -749,7 +748,7 @@ public class ContinuousTreeController {
         }
     }
 
-    @RequestMapping(path = "/status", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(path = "/status", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> getStatus(@RequestHeader(value = "Authorization") String authorizationHeader) {
 
         String sessionId = "null";
@@ -763,7 +762,9 @@ public class ContinuousTreeController {
             sessionId = getSessionId(authorizationHeader);
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
 
-            return ResponseEntity.status(HttpStatus.OK).body(continuousTreeModel.getStatus().toString());
+            String json = new GsonBuilder().create().toJson( Collections.singletonMap("status", continuousTreeModel.getStatus().toString()));
+
+            return ResponseEntity.status(HttpStatus.OK).body(json);
         } catch (SignatureException e) {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
@@ -773,7 +774,7 @@ public class ContinuousTreeController {
         }
     }
 
-    @RequestMapping(path = "/model", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(path = "/model", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ContinuousTreeModelEntity> getModel(@RequestHeader(value = "Authorization") String authorizationHeader) {
 
         String sessionId = "null";
