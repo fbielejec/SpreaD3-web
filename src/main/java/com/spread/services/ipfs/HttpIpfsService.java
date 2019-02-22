@@ -17,8 +17,14 @@ public class HttpIpfsService implements IpfsService {
     private Boolean isInit = false;
 
     @Override
-    public void init(String ipfsHost) {
-        ipfs = new IPFS(ipfsHost);
+    public void init(String host, Integer port) {
+        ipfs = new IPFS(host, port);
+        isInit = true;
+    }
+
+    @Override
+    public void init(String multiaddr) {
+        ipfs = new IPFS(multiaddr);
         isInit = true;
     }
 
@@ -34,7 +40,6 @@ public class HttpIpfsService implements IpfsService {
     public String addDirectory(Path directory) throws IOException {
         List<MerkleNode> addParts = ipfs.add(new NamedStreamable.FileWrapper(directory.toFile()));
         MerkleNode addResult = addParts.get(addParts.size() - 1);
-        // List<MerkleNode> lsResult = ipfs.ls(addResult.hash);
         return addResult.hash.toString();
     }
 

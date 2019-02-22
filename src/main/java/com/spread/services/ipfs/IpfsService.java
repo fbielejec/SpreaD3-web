@@ -5,10 +5,12 @@ import java.nio.file.Path;
 
 public interface IpfsService {
 
-    void init(String ipfsHost);
+    void init(String multiaddress);
+
+    void init(String host, Integer port);
 
     Boolean isInitialized();
-    
+
     String addDirectory(Path directory) throws IOException;
-    
+
 }

@@ -46,7 +46,7 @@ public class FileSystemStorageService implements StorageService {
         } catch (IOException e) {
             isInit = false;
             throw new SpreadException(SpreadException.Type.STORAGE_EXCEPTION,
-                                      "Could not initialize storage",
+                                      "Could not create root directory: " + e.getMessage(),
                                       new String[][] {
                                           {"reason", e.getMessage()}
                                       });

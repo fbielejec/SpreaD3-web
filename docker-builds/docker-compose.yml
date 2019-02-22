@@ -3,7 +3,7 @@ services:
 
   ipfs-daemon:
     build: ipfs/daemon
-    container_name: qa_ipfs-daemon
+    container_name: spread_ipfs-daemon
     volumes:
       - /home/$USER/ipfs-docker:/data/ipfs
       - /home/$USER/ipfs-docker-staging:/export
@@ -12,17 +12,17 @@ services:
 
   ipfs-api:
     build: ipfs/api
-    container_name: qa_ipfs-api
+    container_name: spread_ipfs-api
     depends_on:
       - ipfs-daemon
     ports:
-      - 5001:5001
+      - 127.0.0.1:5001:5001
     networks:
       - ipfs-net
 
   ipfs-gateway:
     build: ipfs/gateway
-    container_name: qa_ipfs-gateway
+    container_name: spread_ipfs-gateway
     depends_on:
       - ipfs-daemon
     ports:
@@ -30,22 +30,34 @@ services:
     networks:
       - ipfs-net
 
-  # TODO : nginx api.spread.nodrama.io
-      
+  api:
+    build: spread-api
+    container_name: spread-api
+    depends_on:
+      - spread-server
+    ports:
+      - 0.0.0.0:4000:4000
+    networks:
+      - spread-net
+
   spread-server:
     image: nodrama/spread-server:latest
     container_name: spread-server
+    volumes:
+      - /home/$USER/spread-vis:/spread-vis
+      - /home/$USER/spread-storage:/spread-storage
+      - /home/$USER/logs:/logs
+      - /home/$USER/configs:/configs
     depends_on:
       - ipfs-daemon
       - ipfs-api
       - ipfs-gateway
-    ports:
-      - 4000:4000
     networks:
       - ipfs-net
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
-      
+      - spread-net
+    # labels:
+    #   - "com.centurylinklabs.watchtower.enable=true"
+
   watchtower:
     image: v2tec/watchtower:latest
     container_name: watchtower
@@ -55,4 +67,6 @@ services:
 
 networks:
   ipfs-net:
+    driver: "bridge"
+  spread-net:
     driver: "bridge"

@@ -1,6 +1,6 @@
 server {
   listen 5001 default_server;
-  server_name localhost ec2-52-42-54-97.us-west-2.compute.amazonaws.com ipfs.api.qa.district0x.io;
+  server_name localhost ec2-52-42-54-97.us-west-2.compute.amazonaws.com ipfs.api.nodrama.io;
 
   location / {
     try_files $uri @ipfs;
@@ -13,7 +13,7 @@ server {
 
   location @ipfs {
     proxy_intercept_errors on;
-    proxy_pass http://qa_ipfs-daemon:5001;
+    proxy_pass http://spread_ipfs-daemon:5001;
   }
 
    # redirect server error pages to the static error page

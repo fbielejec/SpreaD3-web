@@ -1,5 +1,10 @@
-FROM district0x/base:latest
-MAINTAINER "Filip Bielejec" <filip@district0x.io>
+FROM ubuntu:18.04
+MAINTAINER "Filip Bielejec"
+
+# install system-wide deps
+RUN apt-get update -y \
+    && apt-get install --no-install-recommends -y \
+    -q wget
 
 # ENV variables
 ENV IPFS_LOGGING ""
