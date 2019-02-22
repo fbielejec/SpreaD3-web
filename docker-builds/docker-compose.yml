@@ -10,15 +10,15 @@ services:
     networks:
       - ipfs-net
 
-  ipfs-api:
-    build: ipfs/api
-    container_name: spread_ipfs-api
-    depends_on:
-      - ipfs-daemon
-    ports:
-      - 127.0.0.1:5001:5001
-    networks:
-      - ipfs-net
+  # ipfs-api:
+  #   build: ipfs/api
+  #   container_name: spread_ipfs-api
+  #   depends_on:
+  #     - ipfs-daemon
+  #   ports:
+  #     - 127.0.0.1:5001:5001
+  #   networks:
+  #     - ipfs-net
 
   ipfs-gateway:
     build: ipfs/gateway
@@ -50,7 +50,7 @@ services:
       - /home/$USER/configs:/configs
     depends_on:
       - ipfs-daemon
-      - ipfs-api
+      # - ipfs-api
       - ipfs-gateway
     networks:
       - ipfs-net
