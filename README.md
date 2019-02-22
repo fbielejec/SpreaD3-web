@@ -51,8 +51,12 @@ http://localhost:4000/h2-console/
 
 ## Production
 
+```bash
 mvn clean package -DskipTests && java -jar target/spread-server.jar --spring.config.location=file:/home/$USER/configs/spread.properties
+```
 
 ### Docker
 
+```bash
 docker-compose up
+```
