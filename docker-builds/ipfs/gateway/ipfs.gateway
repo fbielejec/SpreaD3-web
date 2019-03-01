@@ -1,6 +1,6 @@
 server {
   listen 8080 default_server;
-  server_name localhost ec2-52-42-54-97.us-west-2.compute.amazonaws.com ipfs.gateway.nodrama.io;
+  server_name localhost ec2-52-42-54-97.us-west-2.compute.amazonaws.com ipfs.spread.nodrama.io;
 
   location / {
     try_files $uri @ipfs;
