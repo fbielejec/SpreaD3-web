@@ -73,6 +73,10 @@ public class ContinuousTreeModelEntity {
     @OneToMany(mappedBy = "tree", cascade = CascadeType.ALL)
     private Set<AttributeEntity> attributes;
 
+    @JsonManagedReference("tree-hpd-levels")
+    @OneToMany(mappedBy = "tree", cascade = CascadeType.ALL)
+    private Set<HpdLevelEntity> hpdLevels;
+
     @Enumerated(EnumType.STRING)
     private Status status;
 
@@ -106,6 +110,14 @@ public class ContinuousTreeModelEntity {
 
     public void setAttributes(Set<AttributeEntity> attributes) {
         this.attributes = attributes;
+    }
+
+    public Set<HpdLevelEntity> getHpdLevels() {
+        return hpdLevels;
+    }
+
+    public void setHpdLevels(Set<HpdLevelEntity> hpdLevels) {
+        this.hpdLevels = hpdLevels;
     }
 
     public String getxCoordinate() {

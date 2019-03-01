@@ -49,6 +49,7 @@ public class TokenController {
 
             logger.log(ILogger.INFO, "Sending token", new String[][] {
                     {"token", jwt},
+                    {"sessionId", uuid},
                     {"request-ip" , request.getRemoteAddr()}
                 });
 

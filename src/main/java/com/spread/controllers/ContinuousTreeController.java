@@ -23,6 +23,7 @@ import com.spread.data.attributable.Point;
 import com.spread.data.geojson.GeoJsonData;
 import com.spread.domain.AttributeEntity;
 import com.spread.domain.ContinuousTreeModelEntity;
+import com.spread.domain.HpdLevelEntity;
 import com.spread.domain.SessionEntity;
 import com.spread.exceptions.SpreadException;
 import com.spread.loggers.AbstractLogger;
@@ -120,19 +121,27 @@ public class ContinuousTreeController {
 
             RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
 
-            Set<AttributeEntity> atts = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
+            Set<AttributeEntity> attributes = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
                 .flatMap(node -> node.getAttributeNames().stream()).map(name -> {
                         return new AttributeEntity(name, continuousTreeModel);
                     }).collect(Collectors.toSet());
 
-            continuousTreeModel.setAttributes(atts);
+            Set<HpdLevelEntity> hpdLevels = attributes.stream().map(attribute -> {
+                    return attribute.getName();
+                }).filter(attributeName -> attributeName.contains("HPD_modality"))
+                .map(hpdString -> {
+                        return new HpdLevelEntity(hpdString.replaceAll("\\D+", ""), continuousTreeModel);
+                    }).collect(Collectors.toSet());
+
+            continuousTreeModel.setAttributes(attributes);
+            continuousTreeModel.setHpdLevels(hpdLevels);
 
             modelRepository.save(continuousTreeModel);
 
             logger.log(ILogger.INFO, "Tree file successfully persisted", new String[][] {
                     {"sessionId", sessionId},
                     {"filename", filename},
-                    {"numberOfAttributes", String.valueOf(atts.size())},
+                    {"numberOfAttributes", String.valueOf(attributes.size())},
                     {"method", new Throwable()
                      .getStackTrace()[0]
                      .getMethodName()},
@@ -199,7 +208,8 @@ public class ContinuousTreeController {
     }
 
     @RequestMapping(path = "/attributes", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Set<String>> attributes(@RequestHeader(value = "Authorization") String authorizationHeader) {
+    public ResponseEntity<Set<String>> attributes(HttpServletRequest request,
+                                                  @RequestHeader(value = "Authorization") String authorizationHeader) {
 
         String sessionId = "null";
 
@@ -213,11 +223,16 @@ public class ContinuousTreeController {
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
 
-            Set<String> uniqueAttributes = continuousTreeModel.getAttributes().stream().map(attribute -> {
+            Set<String> attributes = continuousTreeModel.getAttributes().stream().map(attribute -> {
                     return attribute.getName();
                 }).collect(Collectors.toSet());
 
-            return ResponseEntity.status(HttpStatus.OK).body(uniqueAttributes);
+            logger.log(ILogger.INFO, "GET /attributes", new String[][] {
+                    {"sessionId", sessionId},
+                    {"request-ip" , request.getRemoteAddr()}
+                });
+
+            return ResponseEntity.status(HttpStatus.OK).body(attributes);
         } catch (SignatureException e) {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(null);
@@ -228,7 +243,8 @@ public class ContinuousTreeController {
     }
 
     @RequestMapping(path = "/hpd-levels", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Set<String>> hpdLevels(@RequestHeader(value = "Authorization") String authorizationHeader)
+    public ResponseEntity<Set<String>> hpdLevels(HttpServletRequest request,
+                                                 @RequestHeader(value = "Authorization") String authorizationHeader)
         throws IOException, ImportException {
 
         String sessionId = "null";
@@ -243,8 +259,14 @@ public class ContinuousTreeController {
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
 
-            Set<AttributeEntity> attributes = continuousTreeModel.getAttributes();
-            Set<String> hpdLevels = getHpdLevels(attributes);
+            Set<String> hpdLevels = continuousTreeModel.getHpdLevels().stream().map(attribute -> {
+                    return attribute.getName();
+                }).collect(Collectors.toSet());
+
+            logger.log(ILogger.INFO, "GET /hpd-levels", new String[][] {
+                    {"sessionId", sessionId},
+                    {"request-ip" , request.getRemoteAddr()}
+                });
 
             return ResponseEntity.status(HttpStatus.OK).body(hpdLevels);
         } catch (SignatureException e) {
@@ -631,6 +653,11 @@ public class ContinuousTreeController {
             continuousTreeModel.setStatus(ContinuousTreeModelEntity.Status.GENERATING_OUTPUT);
             modelRepository.save(continuousTreeModel);
 
+            logger.log(ILogger.INFO, "PUT /output", new String[][] {
+                    {"sessionId", sessionId},
+                    {"request-ip" , request.getRemoteAddr()}
+                });
+
             // return immediately
             return ResponseEntity.status(HttpStatus.ACCEPTED).header("Location", sessionId).body(null);
         } catch (SignatureException e) {
@@ -713,6 +740,11 @@ public class ContinuousTreeController {
             continuousTreeModel.setStatus(ContinuousTreeModelEntity.Status.PUBLISHING_IPFS);
             modelRepository.save(continuousTreeModel);
 
+            logger.log(ILogger.INFO, "PUT /ipfs", new String[][] {
+                    {"sessionId", sessionId},
+                    {"request-ip" , request.getRemoteAddr()}
+                });
+
             // return immediately
             return ResponseEntity.status(HttpStatus.ACCEPTED).header("Location", sessionId).body(null);
         } catch (SignatureException e) {
@@ -726,7 +758,8 @@ public class ContinuousTreeController {
 
     // TODO : return JSON {"hash": "<ipfs-hash>"}
     @RequestMapping(path = "/ipfs", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> getIpfsHash(@RequestHeader(value = "Authorization") String authorizationHeader) {
+    public ResponseEntity<String> getIpfsHash(HttpServletRequest request,
+                                              @RequestHeader(value = "Authorization") String authorizationHeader) {
 
         String sessionId = "null";
 
@@ -744,6 +777,11 @@ public class ContinuousTreeController {
                 return ResponseEntity.status(HttpStatus.SEE_OTHER).header("Location", "/continuous/status").body(null);
             }
 
+            logger.log(ILogger.INFO, "GET /ipfs", new String[][] {
+                    {"sessionId", sessionId},
+                    {"request-ip" , request.getRemoteAddr()}
+                });
+
             return ResponseEntity.ok().header(new HttpHeaders().toString()).body(continuousTreeModel.getIpfsHash().toString());
         } catch (SignatureException e) {
             logger.log(ILogger.ERROR, e);
@@ -755,7 +793,8 @@ public class ContinuousTreeController {
     }
 
     @RequestMapping(path = "/status", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> getStatus(@RequestHeader(value = "Authorization") String authorizationHeader) {
+    public ResponseEntity<String> getStatus(HttpServletRequest request,
+                                            @RequestHeader(value = "Authorization") String authorizationHeader) {
 
         String sessionId = "null";
 
@@ -770,6 +809,11 @@ public class ContinuousTreeController {
 
             String json = new GsonBuilder().create().toJson( Collections.singletonMap("status", continuousTreeModel.getStatus().toString()));
 
+            logger.log(ILogger.INFO, "GET /status", new String[][] {
+                    {"sessionId", sessionId},
+                    {"request-ip" , request.getRemoteAddr()}
+                });
+
             return ResponseEntity.status(HttpStatus.OK).body(json);
         } catch (SignatureException e) {
             logger.log(ILogger.ERROR, e);
@@ -781,7 +825,8 @@ public class ContinuousTreeController {
     }
 
     @RequestMapping(path = "/model", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ContinuousTreeModelEntity> getModel(@RequestHeader(value = "Authorization") String authorizationHeader) {
+    public ResponseEntity<ContinuousTreeModelEntity> getModel(HttpServletRequest request,
+                                                              @RequestHeader(value = "Authorization") String authorizationHeader) {
 
         String sessionId = "null";
 
@@ -794,6 +839,11 @@ public class ContinuousTreeController {
             sessionId = getSessionId(authorizationHeader);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+
+            logger.log(ILogger.INFO, "GET /model", new String[][] {
+                    {"sessionId", sessionId},
+                    {"request-ip" , request.getRemoteAddr()}
+                });
 
             return ResponseEntity.status(HttpStatus.OK).body(continuousTreeModel);
         } catch (SignatureException e) {
@@ -887,15 +937,6 @@ public class ContinuousTreeController {
                                                layersList);
 
         return new GsonBuilder().create().toJson(spreadData);
-    }
-
-    private Set<String> getHpdLevels(Set<AttributeEntity> attributeEntities) {
-        Set<String> hpdAttributes = attributeEntities.stream().map(attribute -> {
-                return attribute.getName();
-            }).filter(attributeName -> attributeName.contains("HPD_modality"))
-            .map(hpdString -> hpdString.replaceAll("\\D+", "")).collect(Collectors.toSet());
-
-        return hpdAttributes;
     }
 
     private String getSessionId(String authorizationHeader) throws SpreadException {
