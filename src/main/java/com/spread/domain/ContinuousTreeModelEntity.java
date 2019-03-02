@@ -55,7 +55,7 @@ public class ContinuousTreeModelEntity {
     private String mrsd;
 
     @Column(name = "timescale_multiplier", nullable = true)
-    private double timescaleMultiplier;
+    private Double timescaleMultiplier;
 
     @Column(name = "output_filename", nullable = true)
     private String outputFilename;
