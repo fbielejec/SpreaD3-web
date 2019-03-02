@@ -4,4 +4,5 @@ upload-dir/
 .classpath
 .project
 .factorypath
+test_rest
 other/
