@@ -64,7 +64,7 @@ public class ContinuousTreeModelEntity {
     private String geojsonFilename;
 
     @Column(name = "ipfs_hash", nullable = true)
-    private String ipfsHash;;
+    private String ipfsHash;
 
     @Column(name = "has_external_annotations", nullable = true)
     private Boolean hasExternalAnnotations;

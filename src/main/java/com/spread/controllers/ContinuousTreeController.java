@@ -142,10 +142,10 @@ public class ContinuousTreeController {
                     {"sessionId", sessionId},
                     {"filename", filename},
                     {"numberOfAttributes", String.valueOf(attributes.size())},
-                    {"method", new Throwable()
-                     .getStackTrace()[0]
-                     .getMethodName()},
-                    {"class",  this.getClass().getSimpleName()},
+                    // {"method", new Throwable()
+                    //  .getStackTrace()[0]
+                    //  .getMethodName()},
+                    // {"class",  this.getClass().getSimpleName()},
                     {"request-ip" , request.getRemoteAddr()}
                 });
 
