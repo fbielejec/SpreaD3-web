@@ -914,8 +914,8 @@ public class ContinuousTreeController {
                     {"yCoordinate", continuousTreeModel.getyCoordinate()},
                     {"xCoordinate", continuousTreeModel.getxCoordinate()},
                     {"mrsd", continuousTreeModel.getMrsd()},
-                    {"timescaleMultiplier", continuousTreeModel.getTimescaleMultiplier().toString()},
-                    {"externalAnnotations", continuousTreeModel.getHasExternalAnnotations().toString()}
+                    {"timescaleMultiplier", Optional.ofNullable(continuousTreeModel.getTimescaleMultiplier()).toString()},
+                    {"externalAnnotations", Optional.ofNullable(continuousTreeModel.getHasExternalAnnotations()).toString()}
                 });
 
             return ResponseEntity.status(HttpStatus.OK).body(continuousTreeModel);

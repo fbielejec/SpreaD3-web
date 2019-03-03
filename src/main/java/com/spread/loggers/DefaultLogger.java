@@ -85,7 +85,7 @@ public class DefaultLogger extends AbstractLogger {
             return m1;
         }
 
-        Map<String, String> m2 = Stream.of(map2).collect(Collectors.toMap(k -> k[0], v -> v[1]));
+        Map<String, String> m2 = Stream.of(map2).collect(Collectors.toMap(k -> k[0], v -> Optional.ofNullable(v[1]).orElse("null")));
         m1.forEach((key, value) -> m2.merge(key, value, (v1, v2) -> v1));
         return m2;
     }
