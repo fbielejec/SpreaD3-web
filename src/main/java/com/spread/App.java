@@ -137,13 +137,17 @@ public class App {
         };
     }
 
-    @Bean(name = "threadPoolTaskExecutor")
-    public Executor taskExecutor() {
+    @Bean(name = "longRunningTaskExecutor")
+    public Executor longRunningTaskExecutor() {
+        return newTaskExecutor("spread-long-", 2);
+    }
+
+    private Executor newTaskExecutor(final String threadNamePrefix, int corePoolSize) {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(5);
-        executor.setMaxPoolSize(10);
-        executor.setQueueCapacity(500);
-        executor.setThreadNamePrefix("spread-task-");
+        executor.setCorePoolSize(corePoolSize);
+        executor.setMaxPoolSize(corePoolSize);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix(threadNamePrefix);
         executor.initialize();
         return executor;
     }

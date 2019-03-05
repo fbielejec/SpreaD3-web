@@ -23,7 +23,6 @@ public class AttributeEntity {
     @Column(name = "name", nullable = false)
     private String name;
 
-    // @JsonIgnore
     @JsonBackReference("tree-attributes")
     @ManyToOne
     @JoinColumn(name = "fk_tree_id", nullable = false)

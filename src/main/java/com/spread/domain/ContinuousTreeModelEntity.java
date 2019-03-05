@@ -8,13 +8,9 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.MapsId;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
@@ -27,17 +23,9 @@ public class ContinuousTreeModelEntity {
         PUBLISHING_IPFS, IPFS_HASH_READY
     }
 
-    @JsonIgnore
     @Id
-    @Column(name = "id", nullable = false)
-    private String sessionId;
-
-    // use primary key of Session as the id
-    // delete corresponding session
-    @OneToOne(cascade=CascadeType.ALL)
-    @JoinColumn(name = "id")
-    @MapsId
-    private SessionEntity session;
+    @Column(name="sessionId", nullable = false)
+    String sessionId;
 
     @Column(name = "tree_filename", nullable = false)
     private String treeFilename;
@@ -83,17 +71,23 @@ public class ContinuousTreeModelEntity {
     public ContinuousTreeModelEntity() {
     }
 
-    public ContinuousTreeModelEntity(String absolutePath, SessionEntity session) {
-        this.treeFilename = absolutePath;
-        this.session = session;
+    public ContinuousTreeModelEntity(String sessionId, String treeFilename) {
+        this.treeFilename = treeFilename;
+        this.sessionId = sessionId;
     }
 
-    public ContinuousTreeModelEntity(SessionEntity session) {
-        this.session = session;
+    /**
+     * @return the sessionId
+     */
+    public String getSessionId() {
+        return sessionId;
     }
 
-    public String getId() {
-        return this.session.getId();
+    /**
+     * @param sessionId the sessionId to set
+     */
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
     }
 
     public String getTreeFilename() {
@@ -182,34 +176,6 @@ public class ContinuousTreeModelEntity {
 
     public void setHasExternalAnnotations(Boolean hasExternalAnnotations) {
         this.hasExternalAnnotations = hasExternalAnnotations;
-    }
-
-    /**
-     * @return the sessionId
-     */
-    public String getSessionId() {
-        return sessionId;
-    }
-
-    /**
-     * @param sessionId the sessionId to set
-     */
-    public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
-    }
-
-    /**
-     * @return the session
-     */
-    public SessionEntity getSession() {
-        return session;
-    }
-
-    /**
-     * @param session the session to set
-     */
-    public void setSession(SessionEntity session) {
-        this.session = session;
     }
 
     /**

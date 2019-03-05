@@ -10,11 +10,11 @@
     <Property name="LOG_FILE_NAME">${bundle:application:log.file.name}</Property>
 
     <Property name="CONSOLE_LOG_PATTERN">
-      %highlight{${LOG_LEVEL_PATTERN:-%5p}}{FATAL=bg_red, ERROR=red, WARN=yellow, INFO=green, DEBUG=blue} %m %n
+      %highlight{${LOG_LEVEL_PATTERN:-%5p}}{FATAL=bg_red, ERROR=red, WARN=yellow, INFO=green, DEBUG=blue} [%style{%t}{magenta}] %m %n
     </Property>
 
     <Property name="ROOT_CONSOLE_LOG_PATTERN">
-      %highlight{${LOG_LEVEL_PATTERN:-%5p}}{FATAL=bg_red, ERROR=red, WARN=yellow, INFO=green, DEBUG=blue} {"timestamp" : %d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}}{GMT}, "message" : "%m", "location" : "%l", "thread" : "%t"} %n
+      %highlight{${LOG_LEVEL_PATTERN:-%5p}}{FATAL=bg_red, ERROR=red, WARN=yellow, INFO=green, DEBUG=blue} [%style{%t}{magenta}] {"timestamp" : %d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}}{GMT}, "message" : "%m", "location" : "%l", "thread" : "%t"} %n
     </Property>
 
     <Property name="FILE_LOG_PATTERN">

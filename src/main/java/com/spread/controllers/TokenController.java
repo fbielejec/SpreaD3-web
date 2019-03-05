@@ -3,6 +3,7 @@ package com.spread.controllers;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.transaction.Transactional;
 
 import com.spread.loggers.AbstractLogger;
 import com.spread.loggers.ILogger;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 @Controller
 @CrossOrigin
+@Transactional
 public class TokenController {
 
     private AbstractLogger logger;
@@ -50,7 +52,8 @@ public class TokenController {
             logger.log(ILogger.INFO, "Sending token", new String[][] {
                     {"token", jwt},
                     {"sessionId", uuid},
-                    {"request-ip" , request.getRemoteAddr()}
+                    {"request-ip" , request.getRemoteAddr()},
+                    {"thread" , Thread.currentThread().getName()},
                 });
 
             return ResponseEntity.status(HttpStatus.OK).body(body.toString());

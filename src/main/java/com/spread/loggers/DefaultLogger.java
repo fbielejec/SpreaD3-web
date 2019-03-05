@@ -27,7 +27,8 @@ public class DefaultLogger extends AbstractLogger {
                                         new String[][] {
                                             {"timestamp", Instant.now().toString()},
                                             {"level" , levelToString.get(level) },
-                                            { "message", message}
+                                            {"message", message},
+                                            {"thread" , Thread.currentThread().getName()},
                                         },
                                         meta);
 
@@ -47,7 +48,8 @@ public class DefaultLogger extends AbstractLogger {
                                         new String[][] {
                                             {"timestamp", Instant.now().toString()},
                                             {"level" , levelToString.get(level)},
-                                            { "message", Optional.ofNullable(e.getMessage()).orElse("null")}
+                                            {"message", Optional.ofNullable(e.getMessage()).orElse("null")},
+                                            {"thread" , Thread.currentThread().getName()},
                                         },
                                         meta);
 
