@@ -2,8 +2,8 @@ package com.spread.loggers;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import io.sentry.Sentry;
 import io.sentry.event.Event;
@@ -39,24 +39,21 @@ public class SentryLogger extends AbstractLogger {
             Sentry.init(encodedURL);
     }
 
-    // TODO: if !meta
-
     @Override
-    public void doLog(Integer level, String message, String[][] meta) {
+    public void doLog(Integer level, String message, String[][] ... meta) {
 
         Integer minLevel = stringToLevel.getOrDefault(sentryLogLevel, ERROR);
         if(level >= minLevel) {
 
-            EventBuilder eventBuilder = new EventBuilder();
-
-            if (!(meta == null)) {
-                Map<String, String> metaMap = Stream.of(meta).collect(Collectors.toMap(k -> k[0], v -> v[1]));
-                metaMap.forEach((key, value) -> eventBuilder.withExtra(key, value));
-            }
-            eventBuilder
+            EventBuilder eventBuilder = new EventBuilder()
                 .withMessage(message)
                 .withLevel(levelToSentryLevel.get(level))
                 .withLogger(loggerName);
+
+            if (!(meta == null)) {
+                Map<String, String> map = merge (meta);
+                map.forEach((key, value) -> eventBuilder.withExtra(key, value));
+            }
 
             Sentry.capture(eventBuilder);
         }
@@ -68,17 +65,17 @@ public class SentryLogger extends AbstractLogger {
     }
 
     @Override
-    public void doLog(Integer level, Exception e, String[][] meta) {
+    public void doLog(Integer level, Exception e, String[][] ... meta) {
 
         EventBuilder eventBuilder = new EventBuilder()
-            // .withMessage(e.getMessage())
+            .withMessage(Optional.ofNullable(e.getMessage()).orElse("null"))
             .withLevel(levelToSentryLevel.get(level))
             .withLogger(loggerName)
             .withSentryInterface(new ExceptionInterface(e));
 
         if (!(meta == null)) {
-            Map<String, String> metaMap = Stream.of(meta).collect(Collectors.toMap(k -> k[0], v -> v[1]));
-            metaMap.forEach((key, value) -> eventBuilder.withExtra(key, value));
+            Map<String, String> map = merge (meta);
+            map.forEach((key, value) -> eventBuilder.withExtra(key, value));
         }
 
         Sentry.capture(eventBuilder);
@@ -88,6 +85,5 @@ public class SentryLogger extends AbstractLogger {
     public void doLog(Integer level, Exception e) {
         doLog(level, e, null);
     }
-
 
 }

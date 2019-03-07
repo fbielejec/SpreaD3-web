@@ -27,6 +27,7 @@ import com.spread.domain.HpdLevelEntity;
 import com.spread.exceptions.SpreadException;
 import com.spread.loggers.AbstractLogger;
 import com.spread.loggers.ILogger;
+import com.spread.loggers.LoggingUtils;
 import com.spread.parsers.ContinuousTreeParser;
 import com.spread.parsers.GeoJSONParser;
 import com.spread.parsers.TimeParser;
@@ -153,7 +154,6 @@ public class ContinuousTreeController {
             logger.log(ILogger.ERROR, e, new String[][] {
                     {"message", message},
                     {"sessionId", sessionId},
-                    // {"thread" , Thread.currentThread().getName()},
                 });
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ControllerUtils.jsonResponse("INTERNAL SERVER ERROR"));
         } catch (SpreadException e) {
@@ -634,25 +634,14 @@ public class ContinuousTreeController {
                                     {"request-ip", request.getRemoteAddr()}
                                 });
 
-                        } catch (IOException | ImportException e) {
+                        } catch (Exception e) {
                             continuousTreeModel.setStatus(ContinuousTreeModelEntity.Status.EXCEPTION_OCCURED);
                             modelRepository.save(continuousTreeModel);
 
-                            String message = Optional.ofNullable(e.getMessage()).orElse("null");
-                            logger.log(ILogger.ERROR, e, new String[][] {
-                                    {"message", message},
-                                    {"sessionId", threadLocalSessionId},
-                                    {"request-ip", request.getRemoteAddr()}
-                                });
-
-                        } catch (SpreadException e) {
-                            continuousTreeModel.setStatus(ContinuousTreeModelEntity.Status.EXCEPTION_OCCURED);
-                            modelRepository.save(continuousTreeModel);
-
-                            // TODO : pass meta, merge in logger
                             logger.log(ILogger.ERROR, e, new String[][] {
                                     {"sessionId", threadLocalSessionId},
-                                    {"request-ip", request.getRemoteAddr()}
+                                    {"request-ip", request.getRemoteAddr()},
+                                    {"stacktrace", LoggingUtils.getStackTrace(e)}
                                 });
                         }
                     }
@@ -691,6 +680,7 @@ public class ContinuousTreeController {
 
             // run in background
             final String threadLocalSessionId = sessionId;
+
             longRunningTaskExecutor.execute(new Runnable() {
                     @Override
                     public void run() {
@@ -724,17 +714,13 @@ public class ContinuousTreeController {
                                     {"ipfsHash", hash},
                                 });
 
-                        } catch (IOException e) {
+                        } catch (Exception e) {
                             continuousTreeModel.setStatus(ContinuousTreeModelEntity.Status.EXCEPTION_OCCURED);
                             modelRepository.save(continuousTreeModel);
+
                             logger.log(ILogger.ERROR, e, new String[][] {
                                     {"sessionId", threadLocalSessionId},
-                                });
-                        } catch (SpreadException e) {
-                            continuousTreeModel.setStatus(ContinuousTreeModelEntity.Status.EXCEPTION_OCCURED);
-                            modelRepository.save(continuousTreeModel);
-                            logger.log(ILogger.ERROR, e, new String[][] {
-                                    {"sessionId", threadLocalSessionId},
+                                    {"stacktrace", LoggingUtils.getStackTrace(e)}
                                 });
                         }
                     }

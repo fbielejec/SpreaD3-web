@@ -27,11 +27,11 @@ public interface ILogger {
     public static final int WARN = 3;
     public static final int ERROR = 4;
 
-    void doLog(Integer level, String message, String[][] meta);
+    void doLog(Integer level, String message, String[][] ... meta);
 
     void doLog(Integer level, String message);
 
-    void doLog(Integer level, Exception e, String[][] meta);
+    void doLog(Integer level, Exception e, String[][] ... meta);
 
     void doLog(Integer level, Exception e);
 
