@@ -36,8 +36,8 @@ import com.spread.repositories.KeyRepository;
 import com.spread.services.ipfs.IpfsService;
 import com.spread.services.storage.StorageService;
 import com.spread.services.visualization.VisualizationService;
+import com.spread.utils.ParsersUtils;
 import com.spread.utils.TokenUtils;
-import com.spread.utils.Utils;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -118,7 +118,7 @@ public class ContinuousTreeController {
 
             ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity(sessionId, storageService.loadAsResource(sessionId, filename).getFile().getAbsolutePath());
 
-            RootedTree tree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
+            RootedTree tree = ParsersUtils.importRootedTree(continuousTreeModel.getTreeFilename());
 
             Set<AttributeEntity> attributes = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
                 .flatMap(node -> node.getAttributeNames().stream()).map(name -> {
@@ -142,7 +142,6 @@ public class ContinuousTreeController {
                     {"filename", filename},
                     {"numberOfAttributes", String.valueOf(attributes.size())},
                     {"request-ip" , request.getRemoteAddr()},
-                    // {"thread" , Thread.currentThread().getName()},
                 });
 
             return ResponseEntity.status(HttpStatus.CREATED).header("Location", sessionId).body(ControllerUtils.jsonResponse("OK"));
@@ -157,10 +156,12 @@ public class ContinuousTreeController {
                 });
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ControllerUtils.jsonResponse("INTERNAL SERVER ERROR"));
         } catch (SpreadException e) {
-            logger.log(ILogger.ERROR, e, e.getMeta());
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         }
-
     }
 
     @RequestMapping(path = "/tree", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -179,7 +180,6 @@ public class ContinuousTreeController {
                 logger.log(ILogger.WARN, "No entity with that session id", new String[][] {
                         {"sessionId", sessionId},
                         {"request-ip", request.getRemoteAddr()},
-                        // {"thread" , Thread.currentThread().getName()},
                     });
                 return ResponseEntity.status(HttpStatus.NO_CONTENT).body("No entity with that session id");
             }
@@ -190,7 +190,6 @@ public class ContinuousTreeController {
             logger.log(ILogger.INFO, "Tree file successfully deleted", new String[][] {
                     {"sessionId", sessionId},
                     {"request-ip" , request.getRemoteAddr()},
-                    // {"thread" , Thread.currentThread().getName()},
                 });
 
             return ResponseEntity.status(HttpStatus.OK).body(ControllerUtils.jsonResponse("OK"));
@@ -199,7 +198,10 @@ public class ContinuousTreeController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(ControllerUtils.jsonResponse(e.getMessage()));
         } catch (SpreadException e) {
-            logger.log(ILogger.ERROR, e, e.getMeta());
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         }
     }
@@ -223,7 +225,6 @@ public class ContinuousTreeController {
             logger.log(ILogger.INFO, "GET /attributes", new String[][] {
                     {"sessionId", sessionId},
                     {"request-ip" , request.getRemoteAddr()},
-                    // {"thread" , Thread.currentThread().getName()},
                 });
 
             return ResponseEntity.status(HttpStatus.OK).body(attributes);
@@ -231,7 +232,10 @@ public class ContinuousTreeController {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(null);
         } catch (SpreadException e) {
-            logger.log(ILogger.ERROR, e, e.getMeta());
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(null);
         }
     }
@@ -256,7 +260,6 @@ public class ContinuousTreeController {
             logger.log(ILogger.INFO, "GET /hpd-levels", new String[][] {
                     {"sessionId", sessionId},
                     {"request-ip" , request.getRemoteAddr()},
-                    // {"thread" , Thread.currentThread().getName()},
                 });
 
             return ResponseEntity.status(HttpStatus.OK).body(hpdLevels);
@@ -264,7 +267,10 @@ public class ContinuousTreeController {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(null);
         } catch (SpreadException e) {
-            logger.log(ILogger.ERROR, e, e.getMeta());
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(null);
         }
     }
@@ -290,7 +296,6 @@ public class ContinuousTreeController {
                         {"min", min.toString()},
                         {"max", max.toString()},
                         {"request-ip" , request.getRemoteAddr()},
-                        // {"thread" , Thread.currentThread().getName()},
                     });
                 String json = new GsonBuilder().create().toJson(Collections.singletonMap("response", message));
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(json);
@@ -302,7 +307,6 @@ public class ContinuousTreeController {
                 logger.log(ILogger.WARN, message, new String[][] {
                         {"sessionId", sessionId},
                         {"request-ip", request.getRemoteAddr()},
-                        // {"thread", Thread.currentThread().getName()},
                     });
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
             };
@@ -313,7 +317,6 @@ public class ContinuousTreeController {
             logger.log(ILogger.INFO, "Hpd level parameter successfully set", new String[][] {
                     {"sessionId", sessionId},
                     {"hpdLevel", hpdLevel.toString()},
-                    // {"thread" , Thread.currentThread().getName()},
                 });
 
             return ResponseEntity.status(HttpStatus.OK).body(ControllerUtils.jsonResponse("OK"));
@@ -321,7 +324,10 @@ public class ContinuousTreeController {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNATHORIZED"));
         } catch (SpreadException e) {
-            logger.log(ILogger.ERROR, e, e.getMeta());
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         }
     }
@@ -361,7 +367,10 @@ public class ContinuousTreeController {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         } catch (SpreadException e) {
-            logger.log(ILogger.ERROR, e, e.getMeta());
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         }
     }
@@ -400,7 +409,10 @@ public class ContinuousTreeController {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         } catch (SpreadException e) {
-            logger.log(ILogger.ERROR, e, e.getMeta());
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         }
     }
@@ -439,7 +451,10 @@ public class ContinuousTreeController {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse(e.getMessage()));
         } catch (SpreadException e) {
-            logger.log(ILogger.ERROR, e, e.getMeta());
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body("UNAUTHORIZED");
         }
     }
@@ -490,7 +505,10 @@ public class ContinuousTreeController {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse(e.getMessage()));
         } catch (SpreadException e) {
-            logger.log(ILogger.ERROR, e, e.getMeta());
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         }
     }
@@ -543,7 +561,10 @@ public class ContinuousTreeController {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ControllerUtils.jsonResponse(e.getMessage()));
         } catch (SpreadException e) {
-            logger.log(ILogger.ERROR, e, e.getMeta());
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         }
     }
@@ -594,7 +615,10 @@ public class ContinuousTreeController {
                 });
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ControllerUtils.jsonResponse("INTERNAL SERVER ERROR"));
         } catch (SpreadException e) {
-            logger.log(ILogger.ERROR, e, e.getMeta());
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         }
     }
@@ -661,7 +685,10 @@ public class ContinuousTreeController {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ControllerUtils.jsonResponse(e.getMessage()));
         } catch (SpreadException e) {
-            logger.log(ILogger.ERROR, e, e.getMeta());
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         }
     }
@@ -740,7 +767,10 @@ public class ContinuousTreeController {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ControllerUtils.jsonResponse(e.getMessage()));
         } catch (SpreadException e) {
-            logger.log(ILogger.ERROR, e, e.getMeta());
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         }
     }
@@ -771,7 +801,10 @@ public class ContinuousTreeController {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ControllerUtils.jsonResponse(e.getMessage()));
         } catch (SpreadException e) {
-            logger.log(ILogger.ERROR, e, e.getMeta());
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         }
     }
@@ -801,7 +834,10 @@ public class ContinuousTreeController {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ControllerUtils.jsonResponse(e.getMessage()));
         } catch (SpreadException e) {
-            logger.log(ILogger.ERROR, e, e.getMeta());
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         }
     }
@@ -841,7 +877,10 @@ public class ContinuousTreeController {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         } catch (SpreadException e) {
-            logger.log(ILogger.ERROR, e, e.getMeta());
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(null);
         }
     }
@@ -857,7 +896,7 @@ public class ContinuousTreeController {
 
         // ---IMPORT---//
 
-        RootedTree rootedTree = Utils.importRootedTree(continuousTreeModel.getTreeFilename());
+        RootedTree rootedTree = ParsersUtils.importRootedTree(continuousTreeModel.getTreeFilename());
         TimeParser timeParser = new TimeParser(continuousTreeModel.getMrsd());
 
         timeLine = timeParser.getTimeLine(rootedTree.getHeight(rootedTree.getRootNode()));
@@ -891,7 +930,7 @@ public class ContinuousTreeController {
 
             mapAttributes = geojsonParser.getUniqueMapAttributes();
 
-            String geojsonLayerId = Utils.splitString(continuousTreeModel.getGeojsonFilename(), "/");
+            String geojsonLayerId = ParsersUtils.splitString(continuousTreeModel.getGeojsonFilename(), "/");
             Layer geojsonLayer = new Layer(geojsonLayerId, //
                                            "GeoJson layer", //
                                            geojson);
@@ -907,7 +946,7 @@ public class ContinuousTreeController {
         LinkedList<Point> pointsList = treeParser.getPointsList();
         LinkedList<Area> areasList = treeParser.getAreasList();
 
-        String treeLayerId = Utils.splitString(continuousTreeModel.getTreeFilename(), "/");
+        String treeLayerId = ParsersUtils.splitString(continuousTreeModel.getTreeFilename(), "/");
         Layer treeLayer = new Layer(treeLayerId, //
                                     "Tree layer", //
                                     pointsList, //

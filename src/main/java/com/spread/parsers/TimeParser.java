@@ -3,7 +3,7 @@ package com.spread.parsers;
 import com.spread.data.TimeLine;
 import com.spread.exceptions.SpreadException;
 // import com.spread.loggers.LoggerFactory;
-import com.spread.utils.Utils;
+import com.spread.utils.ParsersUtils;
 
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
@@ -40,16 +40,16 @@ public class TimeParser {
 
                         // negative dates
                         int decimalDateSign = 1;
-                        if (mrsd.contains(Utils.NEGATIVE_SIGN)) {
+                        if (mrsd.contains(ParsersUtils.NEGATIVE_SIGN)) {
                                 decimalDateSign = -1;
                                 mrsd = mrsd.split(separator)[1];
                         }
 
                         endDateFields = convertToYearMonthDay(Double.valueOf(mrsd));
 
-                        year = decimalDateSign * Integer.valueOf(endDateFields[Utils.YEAR_INDEX]);
-                        month = Integer.valueOf(endDateFields[Utils.MONTH_INDEX]);
-                        day = Integer.valueOf(endDateFields[Utils.DAY_INDEX]);
+                        year = decimalDateSign * Integer.valueOf(endDateFields[ParsersUtils.YEAR_INDEX]);
+                        month = Integer.valueOf(endDateFields[ParsersUtils.MONTH_INDEX]);
+                        day = Integer.valueOf(endDateFields[ParsersUtils.DAY_INDEX]);
 
                         // logger.log("MRSD in a decimal date format corresponds to: " + year + separator + month + separator + day,
                         //                 ILogger.INFO);
@@ -59,18 +59,18 @@ public class TimeParser {
                         endDateFields = mrsd.split(separator);
                         if (endDateFields.length == 3) {
 
-                                year = Integer.valueOf(endDateFields[Utils.YEAR_INDEX]);
-                                month = Integer.valueOf(endDateFields[Utils.MONTH_INDEX]);
-                                day = Integer.valueOf(endDateFields[Utils.DAY_INDEX]);
+                                year = Integer.valueOf(endDateFields[ParsersUtils.YEAR_INDEX]);
+                                month = Integer.valueOf(endDateFields[ParsersUtils.MONTH_INDEX]);
+                                day = Integer.valueOf(endDateFields[ParsersUtils.DAY_INDEX]);
 
                         } else if (endDateFields.length == 2) {
 
-                                year = Integer.valueOf(endDateFields[Utils.YEAR_INDEX]);
-                                month = Integer.valueOf(endDateFields[Utils.MONTH_INDEX]);
+                                year = Integer.valueOf(endDateFields[ParsersUtils.YEAR_INDEX]);
+                                month = Integer.valueOf(endDateFields[ParsersUtils.MONTH_INDEX]);
 
                         } else if (endDateFields.length == 1) {
 
-                                year = Integer.valueOf(endDateFields[Utils.YEAR_INDEX]);
+                                year = Integer.valueOf(endDateFields[ParsersUtils.YEAR_INDEX]);
 
                         } else {
                                 throw new SpreadException("Unrecognised date format " + this.mrsd);
@@ -108,9 +108,9 @@ public class TimeParser {
         public String getNodeDate(double nodeHeight) {
 
                 String[] fields = convertToYearMonthDay(nodeHeight);
-                Integer years = Integer.valueOf(fields[Utils.YEAR_INDEX]);
-                Integer months = Integer.valueOf(fields[Utils.MONTH_INDEX]);
-                Integer days = Integer.valueOf(fields[Utils.DAY_INDEX]);
+                Integer years = Integer.valueOf(fields[ParsersUtils.YEAR_INDEX]);
+                Integer months = Integer.valueOf(fields[ParsersUtils.MONTH_INDEX]);
+                Integer days = Integer.valueOf(fields[ParsersUtils.DAY_INDEX]);
                 LocalDate date = endDate.minusYears(years).minusMonths(months).minusDays(days);
                 String stringDate = dateFormatter.print(date);
 

@@ -20,14 +20,14 @@ public abstract class AbstractLogger implements ILogger {
         }
     }
 
-    public void log(Integer level, String message, String[][] meta) {
+    public void log(Integer level, String message, String[][] ... meta) {
         this.doLog(level, message, meta);
         if (nextLogger != null) {
             nextLogger.log(level, message, meta);
         }
     }
 
-    public void log(Integer level, Exception e, String[][] meta) {
+    public void log(Integer level, Exception e, String[][] ... meta) {
         this.doLog(level, e, meta);
         if (nextLogger != null) {
             nextLogger.log(level, e, meta);

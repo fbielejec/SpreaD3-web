@@ -16,93 +16,93 @@ import com.google.gson.JsonObject;
 import com.spread.data.Attribute;
 import com.spread.data.geojson.Feature;
 import com.spread.data.geojson.GeoJsonData;
-import com.spread.utils.Utils;
+import com.spread.utils.ParsersUtils;
 
 public class GeoJSONParser {
 
-	private final String path;
-	private LinkedList<Attribute> uniqueAttributes;
+        private final String path;
+        private LinkedList<Attribute> uniqueAttributes;
 
-	public GeoJSONParser(String path) {
-		this.path = path;
-	}
+        public GeoJSONParser(String path) {
+                this.path = path;
+        }
 
-	public GeoJsonData parseGeoJSON() throws FileNotFoundException {
+        public GeoJsonData parseGeoJSON() throws FileNotFoundException {
 
-		GeoJsonData data = null;
+                GeoJsonData data = null;
 
-		Reader reader = new FileReader(path);
-		Gson gson = new GsonBuilder().create();
-		data = gson.fromJson(reader, GeoJsonData.class);
+                Reader reader = new FileReader(path);
+                Gson gson = new GsonBuilder().create();
+                data = gson.fromJson(reader, GeoJsonData.class);
 
-		Map<String, Attribute> attributesMap = new HashMap<String, Attribute>();
-		for (Feature feature : data.getFeatures()) {
+                Map<String, Attribute> attributesMap = new HashMap<String, Attribute>();
+                for (Feature feature : data.getFeatures()) {
 
-			JsonObject properties = feature.getProperties();
+                        JsonObject properties = feature.getProperties();
 
-			for (Entry<String, JsonElement> entry : properties.entrySet()) {
+                        for (Entry<String, JsonElement> entry : properties.entrySet()) {
 
-				String attributeId = entry.getKey();
-				Object attributeValue = entry.getValue();
+                                String attributeId = entry.getKey();
+                                Object attributeValue = entry.getValue();
 
-				if (attributesMap.containsKey(attributeId)) {
+                                if (attributesMap.containsKey(attributeId)) {
 
-					Attribute attribute = attributesMap.get(attributeId);
+                                        Attribute attribute = attributesMap.get(attributeId);
 
-					if (attribute.getScale().equals(Attribute.ORDINAL)) {
+                                        if (attribute.getScale().equals(Attribute.ORDINAL)) {
 
-						attribute.getDomain().add(attributeValue);
+                                                attribute.getDomain().add(attributeValue);
 
-					} else {
+                                        } else {
 
-						double value = Utils.round((Double) attributeValue, 100);
+                                                double value = ParsersUtils.round((Double) attributeValue, 100);
 
-						if (value < attribute.getRange()[Attribute.MIN_INDEX]) {
-							attribute.getRange()[Attribute.MIN_INDEX] = value;
-						} // END: min check
+                                                if (value < attribute.getRange()[Attribute.MIN_INDEX]) {
+                                                        attribute.getRange()[Attribute.MIN_INDEX] = value;
+                                                } // END: min check
 
-						if (value > attribute.getRange()[Attribute.MAX_INDEX]) {
-							attribute.getRange()[Attribute.MAX_INDEX] = value;
-						} // END: max check
+                                                if (value > attribute.getRange()[Attribute.MAX_INDEX]) {
+                                                        attribute.getRange()[Attribute.MAX_INDEX] = value;
+                                                } // END: max check
 
-					} // END: scale check
+                                        } // END: scale check
 
-				} else {
+                                } else {
 
-					Attribute attribute;
-					if (attributeValue instanceof Double) {
+                                        Attribute attribute;
+                                        if (attributeValue instanceof Double) {
 
-						Double[] range = new Double[2];
-						range[Attribute.MIN_INDEX] = (Double) attributeValue;
-						range[Attribute.MAX_INDEX] = (Double) attributeValue;
+                                                Double[] range = new Double[2];
+                                                range[Attribute.MIN_INDEX] = (Double) attributeValue;
+                                                range[Attribute.MAX_INDEX] = (Double) attributeValue;
 
-						attribute = new Attribute(attributeId, range);
+                                                attribute = new Attribute(attributeId, range);
 
-					} else {
+                                        } else {
 
-						HashSet<Object> domain = new HashSet<Object>();
-						domain.add(attributeValue);
+                                                HashSet<Object> domain = new HashSet<Object>();
+                                                domain.add(attributeValue);
 
-						attribute = new Attribute(attributeId, domain);
+                                                attribute = new Attribute(attributeId, domain);
 
-					} // END: isNumeric check
+                                        } // END: isNumeric check
 
-					attributesMap.put(attributeId, attribute);
+                                        attributesMap.put(attributeId, attribute);
 
-				} // END: key check
+                                } // END: key check
 
-			} // END: properties loop
+                        } // END: properties loop
 
-		}
+                }
 
-		this.uniqueAttributes = new LinkedList<Attribute>();
-		uniqueAttributes.addAll(attributesMap.values());
+                this.uniqueAttributes = new LinkedList<Attribute>();
+                uniqueAttributes.addAll(attributesMap.values());
 
-		return data;
-	}
+                return data;
+        }
 
-	public LinkedList<Attribute> getUniqueMapAttributes() {
-		return uniqueAttributes;
-	}
+        public LinkedList<Attribute> getUniqueMapAttributes() {
+                return uniqueAttributes;
+        }
 
 }

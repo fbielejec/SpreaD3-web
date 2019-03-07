@@ -16,7 +16,7 @@ import com.spread.data.attributable.Point;
 import com.spread.data.primitive.Coordinate;
 import com.spread.data.primitive.Polygon;
 import com.spread.exceptions.SpreadException;
-import com.spread.utils.Utils;
+import com.spread.utils.ParsersUtils;
 
 import jebl.evolution.graphs.Node;
 import jebl.evolution.trees.RootedTree;
@@ -99,15 +99,15 @@ public class ContinuousTreeParser {
 
                                 try {
 
-                                        tryingCoordinate = Utils.X_INDEX;
-                                        nodeCoordinateX = (Double) Utils.getObjectNodeAttribute(node, xCoordinateAttributeName);
+                                        tryingCoordinate = ParsersUtils.X_INDEX;
+                                        nodeCoordinateX = (Double) ParsersUtils.getObjectNodeAttribute(node, xCoordinateAttributeName);
 
-                                        tryingCoordinate = Utils.Y_INDEX;
-                                        nodeCoordinateY = (Double) Utils.getObjectNodeAttribute(node, yCoordinateAttributeName);
+                                        tryingCoordinate = ParsersUtils.Y_INDEX;
+                                        nodeCoordinateY = (Double) ParsersUtils.getObjectNodeAttribute(node, yCoordinateAttributeName);
 
                                 } catch (SpreadException e) {
 
-                                        String coordinateName = (tryingCoordinate == Utils.X_INDEX ? xCoordinateAttributeName
+                                        String coordinateName = (tryingCoordinate == ParsersUtils.X_INDEX ? xCoordinateAttributeName
                                                         : yCoordinateAttributeName);
 
                                         String nodeType = (rootedTree.isExternal(node) ? "external" : "internal");
@@ -148,15 +148,15 @@ public class ContinuousTreeParser {
 
                                 try {
 
-                                        tryingCoordinate = Utils.X_INDEX;
-                                        parentCoordinateX = (Double) Utils.getObjectNodeAttribute(parentNode, xCoordinateAttributeName);
+                                        tryingCoordinate = ParsersUtils.X_INDEX;
+                                        parentCoordinateX = (Double) ParsersUtils.getObjectNodeAttribute(parentNode, xCoordinateAttributeName);
 
-                                        tryingCoordinate = Utils.Y_INDEX;
-                                        parentCoordinateY = (Double) Utils.getObjectNodeAttribute(parentNode, yCoordinateAttributeName);
+                                        tryingCoordinate = ParsersUtils.Y_INDEX;
+                                        parentCoordinateY = (Double) ParsersUtils.getObjectNodeAttribute(parentNode, yCoordinateAttributeName);
 
                                 } catch (SpreadException e) {
 
-                                        String coordinateName = (tryingCoordinate == Utils.X_INDEX ? xCoordinateAttributeName
+                                        String coordinateName = (tryingCoordinate == ParsersUtils.X_INDEX ? xCoordinateAttributeName
                                                         : yCoordinateAttributeName);
 
                                         String nodeType = (rootedTree.isExternal(parentNode) ? "external" : "internal");
@@ -211,7 +211,7 @@ public class ContinuousTreeParser {
 
                                         try {
 
-                                                modality = (Integer) Utils.getObjectNodeAttribute(node, modalityAttributeName);
+                                                modality = (Integer) ParsersUtils.getObjectNodeAttribute(node, modalityAttributeName);
 
                                         } catch (SpreadException e) {
 
@@ -228,10 +228,10 @@ public class ContinuousTreeParser {
 
                                                 // trait1_80%HPD_1
                                                 String xCoordinateHPDName = xCoordinateAttributeName.concat("_").concat(hpd).concat("%")
-                                                                .concat(Utils.HPD.toUpperCase() + "_" + m);
+                                                                .concat(ParsersUtils.HPD.toUpperCase() + "_" + m);
 
                                                 String yCoordinateHPDName = yCoordinateAttributeName.concat("_").concat(hpd).concat("%")
-                                                                .concat(Utils.HPD.toUpperCase() + "_" + m);
+                                                                .concat(ParsersUtils.HPD.toUpperCase() + "_" + m);
 
                                                 Object[] xCoordinateHPD = null;
                                                 Object[] yCoordinateHPD = null;
@@ -239,15 +239,15 @@ public class ContinuousTreeParser {
 
                                                 try {
 
-                                                        tryingCoordinate = Utils.X_INDEX;
-                                                        xCoordinateHPD = Utils.getObjectArrayNodeAttribute(node, xCoordinateHPDName);
+                                                        tryingCoordinate = ParsersUtils.X_INDEX;
+                                                        xCoordinateHPD = ParsersUtils.getObjectArrayNodeAttribute(node, xCoordinateHPDName);
 
-                                                        tryingCoordinate = Utils.Y_INDEX;
-                                                        yCoordinateHPD = Utils.getObjectArrayNodeAttribute(node, yCoordinateHPDName);
+                                                        tryingCoordinate = ParsersUtils.Y_INDEX;
+                                                        yCoordinateHPD = ParsersUtils.getObjectArrayNodeAttribute(node, yCoordinateHPDName);
 
                                                 } catch (SpreadException e) {
 
-                                                        String coordinateName = (tryingCoordinate == Utils.X_INDEX ? xCoordinateHPDName
+                                                        String coordinateName = (tryingCoordinate == ParsersUtils.X_INDEX ? xCoordinateHPDName
                                                                         : yCoordinateHPDName);
 
                                                         String message = coordinateName
@@ -277,7 +277,7 @@ public class ContinuousTreeParser {
 
                                                 HashMap<String, Object> areaAttributesMap = new HashMap<String, Object>();
                                                 areaAttributesMap.putAll(nodePoint.getAttributes());
-                                                areaAttributesMap.put(Utils.HPD.toUpperCase(), hpd);
+                                                areaAttributesMap.put(ParsersUtils.HPD.toUpperCase(), hpd);
 
                                                 Area area = new Area(polygon, nodePoint.getStartTime(), areaAttributesMap);
                                                 areasList.add(area);
@@ -296,15 +296,15 @@ public class ContinuousTreeParser {
 
                                 try {
 
-                                        tryingCoordinate = Utils.X_INDEX;
-                                        rootCoordinateX = (Double) Utils.getObjectNodeAttribute(node, xCoordinateAttributeName);
+                                        tryingCoordinate = ParsersUtils.X_INDEX;
+                                        rootCoordinateX = (Double) ParsersUtils.getObjectNodeAttribute(node, xCoordinateAttributeName);
 
-                                        tryingCoordinate = Utils.Y_INDEX;
-                                        rootCoordinateY = (Double) Utils.getObjectNodeAttribute(node, yCoordinateAttributeName);
+                                        tryingCoordinate = ParsersUtils.Y_INDEX;
+                                        rootCoordinateY = (Double) ParsersUtils.getObjectNodeAttribute(node, yCoordinateAttributeName);
 
                                 } catch (SpreadException e) {
 
-                                        String coordinateName = (tryingCoordinate == Utils.X_INDEX ? xCoordinateAttributeName
+                                        String coordinateName = (tryingCoordinate == ParsersUtils.X_INDEX ? xCoordinateAttributeName
                                                         : yCoordinateAttributeName);
 
                                         String message = coordinateName + " attribute was found on the root node."
@@ -347,7 +347,7 @@ public class ContinuousTreeParser {
 
                                         } else {
 
-                                                double value = Utils.round(Double.valueOf(attributeValue.toString()), 100);
+                                                double value = ParsersUtils.round(Double.valueOf(attributeValue.toString()), 100);
 
                                                 if (value < attribute.getRange()[Attribute.MIN_INDEX]) {
                                                         attribute.getRange()[Attribute.MIN_INDEX] = value;
@@ -410,7 +410,7 @@ public class ContinuousTreeParser {
 
                                         } else {
 
-                                                double value = Utils.round(Double.valueOf(attributeValue.toString()), 100);
+                                                double value = ParsersUtils.round(Double.valueOf(attributeValue.toString()), 100);
 
                                                 if (value < attribute.getRange()[Attribute.MIN_INDEX]) {
                                                         attribute.getRange()[Attribute.MIN_INDEX] = value;
@@ -473,7 +473,7 @@ public class ContinuousTreeParser {
 
                                         } else {
 
-                                                double value = Utils.round(Double.valueOf(attributeValue.toString()), 100);
+                                                double value = ParsersUtils.round(Double.valueOf(attributeValue.toString()), 100);
 
                                                 if (value < attribute.getRange()[Attribute.MIN_INDEX]) {
                                                         attribute.getRange()[Attribute.MIN_INDEX] = value;
@@ -519,7 +519,7 @@ public class ContinuousTreeParser {
 
         private Point createPoint(Node node, Coordinate coordinate) throws SpreadException {
 
-                Double height = Utils.getNodeHeight(rootedTree, node) * timescaleMultiplier;
+                Double height = ParsersUtils.getNodeHeight(rootedTree, node) * timescaleMultiplier;
                 String startTime = timeParser.getNodeDate(height);
 
                 Map<String, Object> attributes = new LinkedHashMap<String, Object>();
@@ -553,7 +553,7 @@ public class ContinuousTreeParser {
 
                 // external nodes have no posterior annotated, need to fix that
                 if (rootedTree.isExternal(node)) {
-                        attributes.put(Utils.POSTERIOR, 1.0);
+                        attributes.put(ParsersUtils.POSTERIOR, 1.0);
                 }
 
                 Point point = new Point(coordinate, startTime, attributes);

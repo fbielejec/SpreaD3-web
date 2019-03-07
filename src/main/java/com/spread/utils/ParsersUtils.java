@@ -1,7 +1,11 @@
 package com.spread.utils;
 
+import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 import com.spread.exceptions.SpreadException;
 
@@ -11,7 +15,7 @@ import jebl.evolution.io.NexusImporter;
 import jebl.evolution.io.TreeImporter;
 import jebl.evolution.trees.RootedTree;
 
-public class Utils {
+public class ParsersUtils {
 
     public static final double EARTH_RADIUS = 6371.0;
 
@@ -41,6 +45,27 @@ public class Utils {
     public static final int X_INDEX = 0;
     public static final int Y_INDEX = 1;
     public static final String NEGATIVE_SIGN = "-";
+
+    // Use this for all random numbers
+    private static final Random random = new Random();
+
+    public static String[] readLines(String filename, String comment) throws IOException {
+
+        FileReader fileReader = new FileReader(filename);
+        BufferedReader bufferedReader = new BufferedReader(fileReader);
+        List<String> lines = new ArrayList<String>();
+
+        String line = null;
+        while ((line = bufferedReader.readLine()) != null) {
+            // skip commented lines
+            if (!line.contains(comment)) {
+                lines.add(line);
+            }
+        }
+
+        bufferedReader.close();
+        return lines.toArray(new String[lines.size()]);
+    }
 
     public static String splitString(String string, String c) {
         String[] id = string.split(c);
@@ -74,6 +99,19 @@ public class Utils {
 
     public static double round(double value, double precision) {
         return (double) Math.round(value * precision) / precision;
+    }
+
+    public static Object pickRand(Object[] array) {
+        int rnd = random.nextInt(array.length);
+        return array[rnd];
+    }
+
+    public static String breakTiesRandomly(String tiedState) {
+
+        String[] array = tiedState.split("\\+");
+        String state = (String) pickRand(array);
+
+        return state;
     }
 
 }

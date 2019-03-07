@@ -53,7 +53,6 @@ public class TokenController {
                     {"token", jwt},
                     {"sessionId", uuid},
                     {"request-ip" , request.getRemoteAddr()},
-                    {"thread" , Thread.currentThread().getName()},
                 });
 
             return ResponseEntity.status(HttpStatus.OK).body(body.toString());

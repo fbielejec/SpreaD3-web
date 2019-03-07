@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.concurrent.Executor;
 
 import com.spread.controllers.ContinuousTreeController;
+import com.spread.controllers.DiscreteTreeController;
 import com.spread.controllers.TokenController;
 import com.spread.domain.KeyEntity;
 import com.spread.loggers.AbstractLogger;
@@ -86,6 +87,9 @@ public class App {
     private ContinuousTreeController continuousTreeController;
 
     @Autowired
+    private DiscreteTreeController discreteTreeController;
+
+    @Autowired
     private TokenController tokenController;
 
     public static void main(String[] args) {
@@ -133,6 +137,7 @@ public class App {
             keyRepository.save(new KeyEntity(secret));
             ipfsService.init(ipfsHost, ipfsPort.intValue());
             continuousTreeController.init(logger);
+            discreteTreeController.init(logger);
             tokenController.init(logger);
         };
     }
