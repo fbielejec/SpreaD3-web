@@ -15,13 +15,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 @Table(name = "continuous_tree_models")
-public class ContinuousTreeModelEntity {
-
-    public enum Status  {
-        EXCEPTION_OCCURED,
-        GENERATING_OUTPUT, OUTPUT_READY,
-        PUBLISHING_IPFS, IPFS_HASH_READY
-    }
+public class ContinuousTreeModelEntity implements IModel {
 
     @Id
     @Column(name="sessionId", nullable = false)
@@ -59,7 +53,7 @@ public class ContinuousTreeModelEntity {
 
     @JsonManagedReference("tree-attributes")
     @OneToMany(mappedBy = "tree", cascade = CascadeType.ALL)
-    private Set<AttributeEntity> attributes;
+    private Set<ContinuousAttributeEntity> attributes;
 
     @JsonManagedReference("tree-hpd-levels")
     @OneToMany(mappedBy = "tree", cascade = CascadeType.ALL)
@@ -76,16 +70,10 @@ public class ContinuousTreeModelEntity {
         this.sessionId = sessionId;
     }
 
-    /**
-     * @return the sessionId
-     */
     public String getSessionId() {
         return sessionId;
     }
 
-    /**
-     * @param sessionId the sessionId to set
-     */
     public void setSessionId(String sessionId) {
         this.sessionId = sessionId;
     }
@@ -98,11 +86,11 @@ public class ContinuousTreeModelEntity {
         this.treeFilename = treeFilename;
     }
 
-    public Set<AttributeEntity> getAttributes() {
+    public Set<ContinuousAttributeEntity> getAttributes() {
         return attributes;
     }
 
-    public void setAttributes(Set<AttributeEntity> attributes) {
+    public void setAttributes(Set<ContinuousAttributeEntity> attributes) {
         this.attributes = attributes;
     }
 
@@ -176,13 +164,6 @@ public class ContinuousTreeModelEntity {
 
     public void setHasExternalAnnotations(Boolean hasExternalAnnotations) {
         this.hasExternalAnnotations = hasExternalAnnotations;
-    }
-
-    /**
-     * @param timescaleMultiplier the timescaleMultiplier to set
-     */
-    public void setTimescaleMultiplier(double timescaleMultiplier) {
-        this.timescaleMultiplier = timescaleMultiplier;
     }
 
     /**

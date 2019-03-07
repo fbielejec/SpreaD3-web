@@ -21,7 +21,7 @@ import com.spread.data.attributable.Area;
 import com.spread.data.attributable.Line;
 import com.spread.data.attributable.Point;
 import com.spread.data.geojson.GeoJsonData;
-import com.spread.domain.AttributeEntity;
+import com.spread.domain.ContinuousAttributeEntity;
 import com.spread.domain.ContinuousTreeModelEntity;
 import com.spread.domain.HpdLevelEntity;
 import com.spread.exceptions.SpreadException;
@@ -37,7 +37,6 @@ import com.spread.services.ipfs.IpfsService;
 import com.spread.services.storage.StorageService;
 import com.spread.services.visualization.VisualizationService;
 import com.spread.utils.ParsersUtils;
-import com.spread.utils.TokenUtils;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -105,7 +104,8 @@ public class ContinuousTreeController {
 
         try {
 
-            sessionId = getSessionId(authorizationHeader);
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
             if(!(modelRepository.findBySessionId(sessionId) == null)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Session with that id already exists.");
@@ -120,9 +120,9 @@ public class ContinuousTreeController {
 
             RootedTree tree = ParsersUtils.importRootedTree(continuousTreeModel.getTreeFilename());
 
-            Set<AttributeEntity> attributes = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
+            Set<ContinuousAttributeEntity> attributes = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
                 .flatMap(node -> node.getAttributeNames().stream()).map(name -> {
-                        return new AttributeEntity(name, continuousTreeModel);
+                        return new ContinuousAttributeEntity(name, continuousTreeModel);
                     }).collect(Collectors.toSet());
 
             Set<HpdLevelEntity> hpdLevels = attributes.stream().map(attribute -> {
@@ -172,7 +172,8 @@ public class ContinuousTreeController {
 
         try {
 
-            sessionId = getSessionId(authorizationHeader);
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
 
@@ -214,7 +215,8 @@ public class ContinuousTreeController {
 
         try {
 
-            sessionId = getSessionId(authorizationHeader);
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
 
@@ -249,7 +251,8 @@ public class ContinuousTreeController {
 
         try {
 
-            sessionId = getSessionId(authorizationHeader);
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
 
@@ -284,7 +287,8 @@ public class ContinuousTreeController {
 
         try {
 
-            sessionId = getSessionId(authorizationHeader);
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
             Integer min = 0;
             Integer max = 100;
@@ -341,7 +345,8 @@ public class ContinuousTreeController {
 
         try {
 
-            sessionId = getSessionId(authorizationHeader);
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
             if(continuousTreeModel == null) {
@@ -365,13 +370,17 @@ public class ContinuousTreeController {
             return ResponseEntity.status(HttpStatus.OK).body(ControllerUtils.jsonResponse("OK"));
         } catch (SignatureException e) {
             logger.log(ILogger.ERROR, e);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("Authorication", "Bearer")
+                .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         } catch (SpreadException e) {
             logger.log(ILogger.ERROR, e, new String[][] {
                     {"sessionId", sessionId},
                 },
                 e.getMeta());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("Authorication", "Bearer")
+                .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         }
     }
 
@@ -384,7 +393,8 @@ public class ContinuousTreeController {
 
         try {
 
-            sessionId = getSessionId(authorizationHeader);
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
             if(continuousTreeModel == null) {
@@ -395,6 +405,7 @@ public class ContinuousTreeController {
                     });
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
             };
+
             continuousTreeModel.setxCoordinate(attribute);
             modelRepository.save(continuousTreeModel);
 
@@ -407,13 +418,17 @@ public class ContinuousTreeController {
             return ResponseEntity.status(HttpStatus.OK).body(ControllerUtils.jsonResponse("OK"));
         } catch (SignatureException e) {
             logger.log(ILogger.ERROR, e);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("Authorication", "Bearer")
+                .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         } catch (SpreadException e) {
             logger.log(ILogger.ERROR, e, new String[][] {
                     {"sessionId", sessionId},
                 },
                 e.getMeta());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("Authorication", "Bearer")
+                .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         }
     }
 
@@ -421,11 +436,13 @@ public class ContinuousTreeController {
     public ResponseEntity<Object> setHasExternalAnnotations(HttpServletRequest request,
                                                             @RequestHeader(value = "Authorization") String authorizationHeader,
                                                             @RequestParam(value = "value", required = true) Boolean hasExternalAnnotations) {
+
         String sessionId = "null";
 
         try {
 
-            sessionId = getSessionId(authorizationHeader);
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
             if(continuousTreeModel == null) {
@@ -468,7 +485,8 @@ public class ContinuousTreeController {
 
         try {
 
-            sessionId = getSessionId(authorizationHeader);
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
             if (!TimeParser.isParseableDate(mrsd)) {
                 String message = "Mrsd parameter is in a wrong format";
@@ -491,6 +509,7 @@ public class ContinuousTreeController {
                     });
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
             };
+
             continuousTreeModel.setMrsd(mrsd);
             modelRepository.save(continuousTreeModel);
 
@@ -517,11 +536,13 @@ public class ContinuousTreeController {
     public ResponseEntity<Object> setTimescaleMultiplier(HttpServletRequest request,
                                                          @RequestHeader(value = "Authorization") String authorizationHeader,
                                                          @RequestParam(value = "value", required = true) Double timescaleMultiplier) {
+
         String sessionId = "null";
 
         try {
 
-            sessionId = getSessionId(authorizationHeader);
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
             Double min = Double.MIN_NORMAL;
             Double max = Double.MAX_VALUE;
@@ -565,7 +586,9 @@ public class ContinuousTreeController {
                     {"sessionId", sessionId},
                 },
                 e.getMeta());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("Authorication", "Bearer")
+                .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         }
     }
 
@@ -578,9 +601,10 @@ public class ContinuousTreeController {
 
         try {
 
-            sessionId = getSessionId(authorizationHeader);
-            String filename = file.getOriginalFilename();
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
+            String filename = file.getOriginalFilename();
             if (storageService.exists(sessionId, file)) {
                 storageService.delete(sessionId, filename);
                 logger.log(ILogger.INFO, "Deleting previously persisted geojson file", new String[][] {
@@ -593,9 +617,7 @@ public class ContinuousTreeController {
             storageService.store(sessionId, file);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
-
             continuousTreeModel.setGeojsonFilename(storageService.loadAsResource(sessionId, filename).getFile().getAbsolutePath());
-
             modelRepository.save(continuousTreeModel);
 
             logger.log(ILogger.INFO, "geojson file successfully persisted", new String[][] {
@@ -607,19 +629,23 @@ public class ContinuousTreeController {
             return new ResponseEntity<>(HttpStatus.CREATED);
         } catch (SignatureException e) {
             logger.log(ILogger.ERROR, e);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ControllerUtils.jsonResponse(e.getMessage()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ControllerUtils.jsonResponse(e.getMessage()));
         } catch (IOException e) {
             logger.log(ILogger.ERROR, e, new String[][] {
                     {"sessionId", sessionId},
                     {"request-ip", request.getRemoteAddr()}
                 });
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ControllerUtils.jsonResponse("INTERNAL SERVER ERROR"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ControllerUtils.jsonResponse("INTERNAL SERVER ERROR"));
         } catch (SpreadException e) {
             logger.log(ILogger.ERROR, e, new String[][] {
                     {"sessionId", sessionId},
                 },
                 e.getMeta());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("Authorication", "Bearer")
+                .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         }
     }
 
@@ -631,7 +657,8 @@ public class ContinuousTreeController {
 
         try {
 
-            sessionId = getSessionId(authorizationHeader);
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
 
             final String threadLocalSessionId = sessionId;
@@ -701,7 +728,8 @@ public class ContinuousTreeController {
 
         try {
 
-            sessionId = getSessionId(authorizationHeader);
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
 
@@ -783,7 +811,8 @@ public class ContinuousTreeController {
 
         try {
 
-            sessionId = getSessionId(authorizationHeader);
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
             if(!(continuousTreeModel.getStatus() == ContinuousTreeModelEntity.Status.IPFS_HASH_READY)) {
@@ -805,7 +834,9 @@ public class ContinuousTreeController {
                     {"sessionId", sessionId},
                 },
                 e.getMeta());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("Authorication", "Bearer")
+                .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         }
     }
 
@@ -817,8 +848,18 @@ public class ContinuousTreeController {
 
         try {
 
-            sessionId = getSessionId(authorizationHeader);
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
+
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+            if(continuousTreeModel == null) {
+                String message = "Session with that id does not exist";
+                logger.log(ILogger.WARN, message, new String[][] {
+                        {"sessionId", sessionId},
+                        {"request-ip", request.getRemoteAddr()}
+                    });
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
+            };
 
             String status = continuousTreeModel.getStatus().toString();
             String json = new GsonBuilder().create().toJson( Collections.singletonMap("status", status));
@@ -832,13 +873,16 @@ public class ContinuousTreeController {
             return ResponseEntity.status(HttpStatus.OK).body(json);
         } catch (SignatureException e) {
             logger.log(ILogger.ERROR, e);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ControllerUtils.jsonResponse(e.getMessage()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ControllerUtils.jsonResponse(e.getMessage()));
         } catch (SpreadException e) {
             logger.log(ILogger.ERROR, e, new String[][] {
                     {"sessionId", sessionId},
                 },
                 e.getMeta());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("Authorication", "Bearer")
+                .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         }
     }
 
@@ -850,7 +894,8 @@ public class ContinuousTreeController {
 
         try {
 
-            sessionId = getSessionId(authorizationHeader);
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
             ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
             if(continuousTreeModel == null) {
@@ -881,7 +926,9 @@ public class ContinuousTreeController {
                     {"sessionId", sessionId},
                 },
                 e.getMeta());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(null);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("Authorication", "Bearer")
+                .body(null);
         }
     }
 
@@ -969,25 +1016,24 @@ public class ContinuousTreeController {
         return new GsonBuilder().create().toJson(spreadData);
     }
 
-    private String getSessionId(String authorizationHeader) throws SpreadException {
-        String sessionId = null;
-        try {
-            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
-            sessionId = TokenUtils.parseJWT(TokenUtils.getBearerToken(authorizationHeader), secret).get(TokenUtils.SESSION_ID)
-                .toString();
-        } catch (Exception e) {
-            throw new SpreadException(SpreadException.Type.AUTHORIZATION_EXCEPTION,
-                                      "Exception when parsing JWT token", new String[][] {
-                                          {"authorizationHeader", authorizationHeader},
-                                          {"method", new Throwable()
-                                           .getStackTrace()[0]
-                                           .getMethodName()},
-                                      });
-
-        }
-
-        return sessionId;
-    }
+    // private String ControllerUtils.getSessionId(String authorizationHeader) throws SpreadException {
+    //     String sessionId = null;
+    //     try {
+    //         String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+    //         sessionId = TokenUtils.parseJWT(TokenUtils.getBearerToken(authorizationHeader), secret)
+    //             .get(TokenUtils.SESSION_ID)
+    //             .toString();
+    //     } catch (Exception e) {
+    //         throw new SpreadException(SpreadException.Type.AUTHORIZATION_EXCEPTION,
+    //                                   "Exception when parsing JWT token", new String[][] {
+    //                                       {"authorizationHeader", authorizationHeader},
+    //                                       {"method", new Throwable()
+    //                                        .getStackTrace()[0]
+    //                                        .getMethodName()},
+    //                                   });
+    //     }
+    //     return sessionId;
+    // }
 
     private Boolean isInInterval(Double value, Double min, Double max) {
         if (value >= min && value <= max)

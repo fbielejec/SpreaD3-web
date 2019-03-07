@@ -2,7 +2,10 @@ package com.spread.controllers;
 
 import java.io.IOException;
 import java.util.LinkedList;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -17,6 +20,7 @@ import com.spread.data.attributable.Line;
 import com.spread.data.attributable.Point;
 import com.spread.data.geojson.GeoJsonData;
 import com.spread.data.primitive.Coordinate;
+import com.spread.domain.DiscreteAttributeEntity;
 import com.spread.domain.DiscreteTreeModelEntity;
 import com.spread.exceptions.SpreadException;
 import com.spread.loggers.AbstractLogger;
@@ -25,6 +29,7 @@ import com.spread.parsers.DiscreteLocationsParser;
 import com.spread.parsers.DiscreteTreeParser;
 import com.spread.parsers.GeoJSONParser;
 import com.spread.parsers.TimeParser;
+import com.spread.repositories.DiscreteTreeModelRepository;
 import com.spread.repositories.KeyRepository;
 import com.spread.services.ipfs.IpfsService;
 import com.spread.services.storage.StorageService;
@@ -60,8 +65,8 @@ public class DiscreteTreeController {
     @Autowired
     private IpfsService ipfsService;
 
-    // @Autowired
-    // private ContinuousTreeModelRepository modelRepository;
+    @Autowired
+    private DiscreteTreeModelRepository modelRepository;
 
     @Autowired
     private KeyRepository keyRepository;
@@ -97,44 +102,34 @@ public class DiscreteTreeController {
 
         try {
 
-            // TODO : location attributes
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
-            // sessionId = getSessionId(authorizationHeader);
-
-            // if(!(modelRepository.findBySessionId(sessionId) == null)) {
-            //     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Session with that id already exists.");
-            // };
+            if(!(modelRepository.findBySessionId(sessionId) == null)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Session with that id already exists.");
+            };
 
             String filename = file.getOriginalFilename();
 
             storageService.createSubdirectory(sessionId);
             storageService.store(sessionId, file);
 
-            // ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity(sessionId, storageService.loadAsResource(sessionId, filename).getFile().getAbsolutePath());
+            DiscreteTreeModelEntity model = new DiscreteTreeModelEntity(sessionId, storageService.loadAsResource(sessionId, filename).getFile().getAbsolutePath());
 
-            // RootedTree tree = ParsersUtils.importRootedTree(continuousTreeModel.getTreeFilename());
+            RootedTree tree = ParsersUtils.importRootedTree(model.getTreeFilename ());
 
-            // Set<AttributeEntity> attributes = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
-            //     .flatMap(node -> node.getAttributeNames().stream()).map(name -> {
-            //             return new AttributeEntity(name, continuousTreeModel);
-            //         }).collect(Collectors.toSet());
+            Set<DiscreteAttributeEntity> attributes = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
+                .flatMap(node -> node.getAttributeNames().stream()).map(name -> {
+                        return new DiscreteAttributeEntity(name, model);
+                    }).collect(Collectors.toSet());
 
-            // Set<HpdLevelEntity> hpdLevels = attributes.stream().map(attribute -> {
-            //         return attribute.getName();
-            //     }).filter(attributeName -> attributeName.contains("HPD_modality"))
-            //     .map(hpdString -> {
-            //             return new HpdLevelEntity(hpdString.replaceAll("\\D+", ""), continuousTreeModel);
-            //         }).collect(Collectors.toSet());
-
-            // continuousTreeModel.setAttributes(attributes);
-            // continuousTreeModel.setHpdLevels(hpdLevels);
-
-            // modelRepository.save(continuousTreeModel);
+            model.setAttributes(attributes);
+            modelRepository.save(model);
 
             logger.log(ILogger.INFO, "Tree file successfully persisted", new String[][] {
                     {"sessionId", sessionId},
                     {"filename", filename},
-                    // {"numberOfAttributes", String.valueOf(attributes.size())},
+                    {"numberOfAttributes", String.valueOf(attributes.size())},
                     {"request-ip" , request.getRemoteAddr()},
                 });
 
@@ -142,13 +137,13 @@ public class DiscreteTreeController {
         } catch (SignatureException e) {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse(e.getMessage()));
-            // } catch (IOException | ImportException e) {
-            //     String message = Optional.ofNullable(e.getMessage()).orElse("Exception encountered when importing tree file");
-            //     logger.log(ILogger.ERROR, e, new String[][] {
-            //             {"message", message},
-            //             {"sessionId", sessionId},
-            //         });
-            //     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ControllerUtils.jsonResponse("INTERNAL SERVER ERROR"));
+            } catch (IOException | ImportException e) {
+                String message = Optional.ofNullable(e.getMessage()).orElse("Exception encountered when importing tree file");
+                logger.log(ILogger.ERROR, e, new String[][] {
+                        {"message", message},
+                        {"sessionId", sessionId},
+                    });
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ControllerUtils.jsonResponse("INTERNAL SERVER ERROR"));
         } catch (SpreadException e) {
             logger.log(ILogger.ERROR, e, new String[][] {
                     {"sessionId", sessionId},
@@ -159,7 +154,7 @@ public class DiscreteTreeController {
     }
 
 
-
+// TODO : locations endpoint
 
 
 
@@ -185,25 +180,11 @@ public class DiscreteTreeController {
 
         // ---IMPORT---//
 
-        // tree
-        // RootedTree rootedTree;
-        // if (settings.rootedTree != null) {
-        //         rootedTree = settings.rootedTree;
-        // } else {
-        //         rootedTree = Utils.importRootedTree(settings.treeFilename);
-        // }
-
         RootedTree rootedTree = ParsersUtils.importRootedTree(model.getTreeFilename());
 
         System.out.println("Imported tree");
 
-        // locations
-        // if (settings.locationsList != null) {
-        //         locationsList = settings.locationsList;
-        // } else {
-
-        // }
-
+        // TODO : remove file use, Locations colection instead
         DiscreteLocationsParser locationsParser = new DiscreteLocationsParser(model.getLocationsFilename(), false
                                                                               // model.hasHeader()
                                                                               // settings.locationsFilename, settings.hasHeader
@@ -247,7 +228,7 @@ public class DiscreteTreeController {
 
         DiscreteTreeParser treeParser = new DiscreteTreeParser(
                                                                rootedTree,
-                                                               model.getLocationAttributeName (),
+                                                               model.getLocationAttribute (),
                                                                locationsList,
                                                                timeParser,
                                                                model.getTimescaleMultiplier ()
@@ -309,8 +290,7 @@ public class DiscreteTreeController {
         return new GsonBuilder().create().toJson(data);
     }
 
-    private LinkedList<Attribute> getCoordinateRangeAttributes(
-                                                               LinkedList<Location> locationsList) throws SpreadException  {
+    private LinkedList<Attribute> getCoordinateRangeAttributes(LinkedList<Location> locationsList) throws SpreadException  {
 
         LinkedList<Attribute> coordinateRange = new LinkedList<Attribute>();
 
