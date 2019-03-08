@@ -46,4 +46,12 @@ public class TestConfiguration {
         return visualizationService;
     }
 
+    // @Bean
+    // @Primary
+    // public TokenController tokenController() throws SpreadException {
+    //     TokenController tokenController = new TokenController();
+    //     tokenController.init(logger);
+    //     return tokenController;
+    // }
+
 }

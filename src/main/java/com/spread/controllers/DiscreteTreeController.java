@@ -111,7 +111,12 @@ public class DiscreteTreeController {
             sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
             if(!(modelRepository.findBySessionId(sessionId) == null)) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Session with that id already exists.");
+                String message = "Session with that id already exists.";
+                logger.log(ILogger.ERROR, message, new String[][] {
+                        {"sessionId", sessionId},
+                        {"request-ip" , request.getRemoteAddr()},
+                    });
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
             };
 
             String filename = file.getOriginalFilename();

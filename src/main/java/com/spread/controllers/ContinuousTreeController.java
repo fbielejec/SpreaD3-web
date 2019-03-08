@@ -109,7 +109,12 @@ public class ContinuousTreeController {
             sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
             if(!(modelRepository.findBySessionId(sessionId) == null)) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Session with that id already exists.");
+                String message = "Session with that id already exists.";
+                logger.log(ILogger.ERROR, message, new String[][] {
+                        {"sessionId", sessionId},
+                        {"request-ip" , request.getRemoteAddr()},
+                    });
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
             };
 
             String filename = file.getOriginalFilename();
@@ -148,7 +153,9 @@ public class ContinuousTreeController {
             return ResponseEntity.status(HttpStatus.CREATED).header("Location", sessionId).body(ControllerUtils.jsonResponse("OK"));
         } catch (SignatureException e) {
             logger.log(ILogger.ERROR, e);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse(e.getMessage()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("Authorication", "Bearer")
+                .body(ControllerUtils.jsonResponse(e.getMessage()));
         } catch (IOException | ImportException e) {
             String message = Optional.ofNullable(e.getMessage()).orElse("Exception encountered when importing tree file");
             logger.log(ILogger.ERROR, e, new String[][] {

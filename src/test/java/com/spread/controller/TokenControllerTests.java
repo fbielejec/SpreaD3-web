@@ -32,17 +32,7 @@ public class TokenControllerTests {
 
     @Before
     public void setupMockMvc() throws Exception {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webContext) //
-            .build();
-    }
-
-    @Test
-    public void testRegularToken() throws Exception {
-        String sessionId = UUID.randomUUID().toString();
-        String token = TokenUtils.createJWT(secret, sessionId);
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/continuous/model").header("Authorization", "Bearer " + token))
-            .andExpect(status().isOk());
+        mockMvc = MockMvcBuilders.webAppContextSetup(webContext).build();
     }
 
     @Test
