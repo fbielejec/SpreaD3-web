@@ -24,6 +24,7 @@ import com.spread.data.geojson.GeoJsonData;
 import com.spread.domain.ContinuousAttributeEntity;
 import com.spread.domain.ContinuousTreeModelEntity;
 import com.spread.domain.HpdLevelEntity;
+import com.spread.domain.IModel;
 import com.spread.exceptions.SpreadException;
 import com.spread.loggers.AbstractLogger;
 import com.spread.loggers.ILogger;
@@ -116,26 +117,26 @@ public class ContinuousTreeController {
             storageService.createSubdirectory(sessionId);
             storageService.store(sessionId, file);
 
-            ContinuousTreeModelEntity continuousTreeModel = new ContinuousTreeModelEntity(sessionId, storageService.loadAsResource(sessionId, filename).getFile().getAbsolutePath());
+            ContinuousTreeModelEntity model = new ContinuousTreeModelEntity(sessionId, storageService.loadAsResource(sessionId, filename).getFile().getAbsolutePath());
 
-            RootedTree tree = ParsersUtils.importRootedTree(continuousTreeModel.getTreeFilename());
+            RootedTree tree = ParsersUtils.importRootedTree(model.getTreeFilename());
 
             Set<ContinuousAttributeEntity> attributes = tree.getNodes().stream().filter(node -> !tree.isRoot(node))
                 .flatMap(node -> node.getAttributeNames().stream()).map(name -> {
-                        return new ContinuousAttributeEntity(name, continuousTreeModel);
+                        return new ContinuousAttributeEntity(name, model);
                     }).collect(Collectors.toSet());
 
             Set<HpdLevelEntity> hpdLevels = attributes.stream().map(attribute -> {
                     return attribute.getName();
                 }).filter(attributeName -> attributeName.contains("HPD_modality"))
                 .map(hpdString -> {
-                        return new HpdLevelEntity(hpdString.replaceAll("\\D+", ""), continuousTreeModel);
+                        return new HpdLevelEntity(hpdString.replaceAll("\\D+", ""), model);
                     }).collect(Collectors.toSet());
 
-            continuousTreeModel.setAttributes(attributes);
-            continuousTreeModel.setHpdLevels(hpdLevels);
+            model.setAttributes(attributes);
+            model.setHpdLevels(hpdLevels);
 
-            modelRepository.save(continuousTreeModel);
+            modelRepository.save(model);
 
             logger.log(ILogger.INFO, "Tree file successfully persisted", new String[][] {
                     {"sessionId", sessionId},
@@ -175,9 +176,9 @@ public class ContinuousTreeController {
             String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
             sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
-            ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+            ContinuousTreeModelEntity model = modelRepository.findBySessionId(sessionId);
 
-            if(continuousTreeModel == null) {
+            if(model == null) {
                 logger.log(ILogger.WARN, "No entity with that session id", new String[][] {
                         {"sessionId", sessionId},
                         {"request-ip", request.getRemoteAddr()},
@@ -185,7 +186,7 @@ public class ContinuousTreeController {
                 return ResponseEntity.status(HttpStatus.NO_CONTENT).body("No entity with that session id");
             }
 
-            modelRepository.delete(continuousTreeModel);
+            modelRepository.delete(model);
             storageService.deleteSubdirectory(sessionId);
 
             logger.log(ILogger.INFO, "Tree file successfully deleted", new String[][] {
@@ -234,8 +235,8 @@ public class ContinuousTreeController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(json);
             }
 
-            ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
-            if(continuousTreeModel == null) {
+            ContinuousTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            if(model == null) {
                 String message = "Session with that id does not exist";
                 logger.log(ILogger.WARN, message, new String[][] {
                         {"sessionId", sessionId},
@@ -244,8 +245,8 @@ public class ContinuousTreeController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
             };
 
-            continuousTreeModel.setHpdLevel(hpdLevel);
-            modelRepository.save(continuousTreeModel);
+            model.setHpdLevel(hpdLevel);
+            modelRepository.save(model);
 
             logger.log(ILogger.INFO, "Hpd level parameter successfully set", new String[][] {
                     {"sessionId", sessionId},
@@ -277,8 +278,8 @@ public class ContinuousTreeController {
             String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
             sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
-            ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
-            if(continuousTreeModel == null) {
+            ContinuousTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            if(model == null) {
                 String message = "Session with that id does not exist";
                 logger.log(ILogger.WARN, message, new String[][] {
                         {"sessionId", sessionId},
@@ -287,8 +288,8 @@ public class ContinuousTreeController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
             };
 
-            continuousTreeModel.setyCoordinate(attribute);
-            modelRepository.save(continuousTreeModel);
+            model.setyCoordinate(attribute);
+            modelRepository.save(model);
 
             logger.log(ILogger.INFO, "y coordinate successfully set", new String[][] {
                     {"sessionId", sessionId},
@@ -325,8 +326,8 @@ public class ContinuousTreeController {
             String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
             sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
-            ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
-            if(continuousTreeModel == null) {
+            ContinuousTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            if(model == null) {
                 String message = "Session with that id does not exist";
                 logger.log(ILogger.WARN, message, new String[][] {
                         {"sessionId", sessionId},
@@ -335,8 +336,8 @@ public class ContinuousTreeController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
             };
 
-            continuousTreeModel.setxCoordinate(attribute);
-            modelRepository.save(continuousTreeModel);
+            model.setxCoordinate(attribute);
+            modelRepository.save(model);
 
             logger.log(ILogger.INFO, "x coordinate successfully set", new String[][] {
                     {"sessionId", sessionId},
@@ -373,8 +374,8 @@ public class ContinuousTreeController {
             String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
             sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
-            ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
-            if(continuousTreeModel == null) {
+            ContinuousTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            if(model == null) {
                 String message = "Session with that id does not exist";
                 logger.log(ILogger.WARN, message, new String[][] {
                         {"sessionId", sessionId},
@@ -383,8 +384,8 @@ public class ContinuousTreeController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
             };
 
-            continuousTreeModel.setHasExternalAnnotations(hasExternalAnnotations);
-            modelRepository.save(continuousTreeModel);
+            model.setHasExternalAnnotations(hasExternalAnnotations);
+            modelRepository.save(model);
 
             logger.log(ILogger.INFO, "external annotations parameter successfully set", new String[][] {
                     {"sessionId", sessionId},
@@ -429,8 +430,8 @@ public class ContinuousTreeController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
             }
 
-            ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
-            if(continuousTreeModel == null) {
+            ContinuousTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            if(model == null) {
                 String message = "Session with that id does not exist";
                 logger.log(ILogger.WARN, message, new String[][] {
                         {"sessionId", sessionId},
@@ -439,8 +440,8 @@ public class ContinuousTreeController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
             };
 
-            continuousTreeModel.setMrsd(mrsd);
-            modelRepository.save(continuousTreeModel);
+            model.setMrsd(mrsd);
+            modelRepository.save(model);
 
             logger.log(ILogger.INFO, "Mrsd parameter successfully set", new String[][] {
                     {"sessionId", sessionId},
@@ -488,8 +489,8 @@ public class ContinuousTreeController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
             }
 
-            ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
-            if(continuousTreeModel == null) {
+            ContinuousTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            if(model == null) {
                 String message = "Session with that id does not exist";
                 logger.log(ILogger.WARN, message, new String[][] {
                         {"sessionId", sessionId},
@@ -497,8 +498,8 @@ public class ContinuousTreeController {
                     });
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
             };
-            continuousTreeModel.setTimescaleMultiplier(timescaleMultiplier);
-            modelRepository.save(continuousTreeModel);
+            model.setTimescaleMultiplier(timescaleMultiplier);
+            modelRepository.save(model);
 
             logger.log(ILogger.INFO, "Timescale multiplier parameter successfully set", new String[][] {
                     {"sessionId", sessionId},
@@ -545,9 +546,9 @@ public class ContinuousTreeController {
 
             storageService.store(sessionId, file);
 
-            ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
-            continuousTreeModel.setGeojsonFilename(storageService.loadAsResource(sessionId, filename).getFile().getAbsolutePath());
-            modelRepository.save(continuousTreeModel);
+            ContinuousTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            model.setGeojsonFilename(storageService.loadAsResource(sessionId, filename).getFile().getAbsolutePath());
+            modelRepository.save(model);
 
             logger.log(ILogger.INFO, "geojson file successfully persisted", new String[][] {
                     {"sessionId", sessionId},
@@ -588,7 +589,15 @@ public class ContinuousTreeController {
 
             String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
             sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
-            ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+            ContinuousTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            if(model == null) {
+                String message = "Session with that id does not exist";
+                logger.log(ILogger.WARN, message, new String[][] {
+                        {"sessionId", sessionId},
+                        {"request-ip", request.getRemoteAddr()}
+                    });
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
+            };
 
             final String threadLocalSessionId = sessionId;
             longRunningTaskExecutor.execute(new Runnable() {
@@ -602,12 +611,12 @@ public class ContinuousTreeController {
                                     {"request-ip", request.getRemoteAddr()}
                                 });
 
-                            String json = doGenerateOutput(continuousTreeModel);
+                            String json = doGenerateOutput(model);
                             storageService.write(threadLocalSessionId, "data.json", json.getBytes());
 
-                            continuousTreeModel.setOutputFilename(storageService.loadAsResource(threadLocalSessionId, "data.json").getFile().getAbsolutePath());
-                            continuousTreeModel.setStatus(ContinuousTreeModelEntity.Status.OUTPUT_READY);
-                            modelRepository.save(continuousTreeModel);
+                            model.setOutputFilename(storageService.loadAsResource(threadLocalSessionId, "data.json").getFile().getAbsolutePath());
+                            model.setStatus(IModel.Status.OUTPUT_READY);
+                            modelRepository.save(model);
 
                             logger.log(ILogger.INFO, "Output succesfully generated", new String[][] {
                                     {"sessionId", threadLocalSessionId},
@@ -615,8 +624,8 @@ public class ContinuousTreeController {
                                 });
 
                         } catch (Exception e) {
-                            continuousTreeModel.setStatus(ContinuousTreeModelEntity.Status.EXCEPTION_OCCURED);
-                            modelRepository.save(continuousTreeModel);
+                            model.setStatus(IModel.Status.EXCEPTION_OCCURED);
+                            modelRepository.save(model);
 
                             logger.log(ILogger.ERROR, e, new String[][] {
                                     {"sessionId", threadLocalSessionId},
@@ -627,8 +636,8 @@ public class ContinuousTreeController {
                     }
                 });
 
-            continuousTreeModel.setStatus(ContinuousTreeModelEntity.Status.GENERATING_OUTPUT);
-            modelRepository.save(continuousTreeModel);
+            model.setStatus(IModel.Status.GENERATING_OUTPUT);
+            modelRepository.save(model);
 
             logger.log(ILogger.INFO, "PUT /output", new String[][] {
                     {"sessionId", sessionId},
@@ -660,7 +669,7 @@ public class ContinuousTreeController {
             String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
             sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
-            ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+            ContinuousTreeModelEntity model = modelRepository.findBySessionId(sessionId);
 
             // run in background
             final String threadLocalSessionId = sessionId;
@@ -689,9 +698,9 @@ public class ContinuousTreeController {
                                 });
 
                             String hash = ipfsService.addDirectory(storageService.getSubdirectoryLocation(threadLocalSessionId));
-                            continuousTreeModel.setIpfsHash(hash);
-                            continuousTreeModel.setStatus(ContinuousTreeModelEntity.Status.IPFS_HASH_READY);
-                            modelRepository.save(continuousTreeModel);
+                            model.setIpfsHash(hash);
+                            model.setStatus(IModel.Status.IPFS_HASH_READY);
+                            modelRepository.save(model);
 
                             logger.log(ILogger.INFO, "Published to ipfs", new String[][] {
                                     {"sessionId", threadLocalSessionId},
@@ -699,8 +708,8 @@ public class ContinuousTreeController {
                                 });
 
                         } catch (Exception e) {
-                            continuousTreeModel.setStatus(ContinuousTreeModelEntity.Status.EXCEPTION_OCCURED);
-                            modelRepository.save(continuousTreeModel);
+                            model.setStatus(IModel.Status.EXCEPTION_OCCURED);
+                            modelRepository.save(model);
 
                             logger.log(ILogger.ERROR, e, new String[][] {
                                     {"sessionId", threadLocalSessionId},
@@ -711,8 +720,8 @@ public class ContinuousTreeController {
                 });
 
             // return immediately
-            continuousTreeModel.setStatus(ContinuousTreeModelEntity.Status.PUBLISHING_IPFS);
-            modelRepository.save(continuousTreeModel);
+            model.setStatus(IModel.Status.PUBLISHING_IPFS);
+            modelRepository.save(model);
 
             logger.log(ILogger.INFO, "PUT /ipfs", new String[][] {
                     {"sessionId", sessionId},
@@ -743,8 +752,17 @@ public class ContinuousTreeController {
             String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
             sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
-            ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
-            if(!(continuousTreeModel.getStatus() == ContinuousTreeModelEntity.Status.IPFS_HASH_READY)) {
+            ContinuousTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            if(model == null) {
+                String message = "Session with that id does not exist";
+                logger.log(ILogger.WARN, message, new String[][] {
+                        {"sessionId", sessionId},
+                        {"request-ip", request.getRemoteAddr()},
+                    });
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
+            };
+
+            if(!(model.getStatus() == IModel.Status.IPFS_HASH_READY)) {
                 String message = "Client should poll for status";
                 return ResponseEntity.status(HttpStatus.SEE_OTHER).header("Location", "/continuous/status").body(ControllerUtils.jsonResponse(message));
             }
@@ -754,7 +772,7 @@ public class ContinuousTreeController {
                     {"request-ip" , request.getRemoteAddr()}
                 });
 
-            return ResponseEntity.status(HttpStatus.OK).body(ControllerUtils.jsonResponse(continuousTreeModel.getIpfsHash()));
+            return ResponseEntity.status(HttpStatus.OK).body(ControllerUtils.jsonResponse(model.getIpfsHash()));
         } catch (SignatureException e) {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ControllerUtils.jsonResponse(e.getMessage()));
@@ -780,8 +798,8 @@ public class ContinuousTreeController {
             String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
             sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
-            ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
-            if(continuousTreeModel == null) {
+            ContinuousTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            if(model == null) {
                 String message = "Session with that id does not exist";
                 logger.log(ILogger.WARN, message, new String[][] {
                         {"sessionId", sessionId},
@@ -790,7 +808,7 @@ public class ContinuousTreeController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
             };
 
-            String status = continuousTreeModel.getStatus().toString();
+            String status = model.getStatus().toString();
             String json = new GsonBuilder().create().toJson( Collections.singletonMap("status", status));
 
             logger.log(ILogger.INFO, "GET /status", new String[][] {
@@ -826,8 +844,8 @@ public class ContinuousTreeController {
             String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
             sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
-            ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
-            if(continuousTreeModel == null) {
+            ContinuousTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            if(model == null) {
                 String message = "Session with that id does not exist";
                 logger.log(ILogger.WARN, message, new String[][] {
                         {"sessionId", sessionId},
@@ -838,15 +856,15 @@ public class ContinuousTreeController {
 
             logger.log(ILogger.INFO, "GET /model", new String[][] {
                     {"sessionId", sessionId},
-                    {"yCoordinate", continuousTreeModel.getyCoordinate()},
-                    {"xCoordinate", continuousTreeModel.getxCoordinate()},
-                    {"mrsd", continuousTreeModel.getMrsd()},
-                    {"timescaleMultiplier", Optional.ofNullable(continuousTreeModel.getTimescaleMultiplier()).toString()},
-                    {"externalAnnotations", Optional.ofNullable(continuousTreeModel.getHasExternalAnnotations()).toString()},
+                    {"yCoordinate", model.getyCoordinate()},
+                    {"xCoordinate", model.getxCoordinate()},
+                    {"mrsd", model.getMrsd()},
+                    {"timescaleMultiplier", Optional.ofNullable(model.getTimescaleMultiplier()).toString()},
+                    {"externalAnnotations", Optional.ofNullable(model.getHasExternalAnnotations()).toString()},
                     {"request-ip", request.getRemoteAddr()},
                 });
 
-            return ResponseEntity.status(HttpStatus.OK).body(continuousTreeModel);
+            return ResponseEntity.status(HttpStatus.OK).body(model);
         } catch (SignatureException e) {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
@@ -861,7 +879,7 @@ public class ContinuousTreeController {
         }
     }
 
-    private String doGenerateOutput (ContinuousTreeModelEntity continuousTreeModel) throws IOException, ImportException, SpreadException {
+    private String doGenerateOutput (ContinuousTreeModelEntity model) throws IOException, ImportException, SpreadException {
 
         TimeLine timeLine = null;
         LinkedList<Attribute> mapAttributes = null;
@@ -872,20 +890,20 @@ public class ContinuousTreeController {
 
         // ---IMPORT---//
 
-        RootedTree rootedTree = ParsersUtils.importRootedTree(continuousTreeModel.getTreeFilename());
-        TimeParser timeParser = new TimeParser(continuousTreeModel.getMrsd());
+        RootedTree rootedTree = ParsersUtils.importRootedTree(model.getTreeFilename());
+        TimeParser timeParser = new TimeParser(model.getMrsd());
 
         timeLine = timeParser.getTimeLine(rootedTree.getHeight(rootedTree.getRootNode()));
 
         // logger.log("Parsed time line", ILogger.INFO);
 
         ContinuousTreeParser treeParser = new ContinuousTreeParser(rootedTree, //
-                                                                   continuousTreeModel.getxCoordinate(), //
-                                                                   continuousTreeModel.getyCoordinate(), //
-                                                                   continuousTreeModel.hasExternalAnnotations(), //
-                                                                   continuousTreeModel.getHpdLevel(), //
+                                                                   model.getxCoordinate(), //
+                                                                   model.getyCoordinate(), //
+                                                                   model.hasExternalAnnotations(), //
+                                                                   model.getHpdLevel(), //
                                                                    timeParser, //
-                                                                   continuousTreeModel.getTimescaleMultiplier());
+                                                                   model.getTimescaleMultiplier());
 
         treeParser.parseTree();
 
@@ -899,14 +917,14 @@ public class ContinuousTreeController {
 
         // ---GEOJSON LAYER---//
 
-        if (continuousTreeModel.getGeojsonFilename() != null) {
+        if (model.getGeojsonFilename() != null) {
 
-            GeoJSONParser geojsonParser = new GeoJSONParser(continuousTreeModel.getGeojsonFilename());
+            GeoJSONParser geojsonParser = new GeoJSONParser(model.getGeojsonFilename());
             GeoJsonData geojson = geojsonParser.parseGeoJSON();
 
             mapAttributes = geojsonParser.getUniqueMapAttributes();
 
-            String geojsonLayerId = ParsersUtils.splitString(continuousTreeModel.getGeojsonFilename(), "/");
+            String geojsonLayerId = ParsersUtils.splitString(model.getGeojsonFilename(), "/");
             Layer geojsonLayer = new Layer(geojsonLayerId, //
                                            "GeoJson layer", //
                                            geojson);
@@ -922,7 +940,7 @@ public class ContinuousTreeController {
         LinkedList<Point> pointsList = treeParser.getPointsList();
         LinkedList<Area> areasList = treeParser.getAreasList();
 
-        String treeLayerId = ParsersUtils.splitString(continuousTreeModel.getTreeFilename(), "/");
+        String treeLayerId = ParsersUtils.splitString(model.getTreeFilename(), "/");
         Layer treeLayer = new Layer(treeLayerId, //
                                     "Tree layer", //
                                     pointsList, //
@@ -930,8 +948,8 @@ public class ContinuousTreeController {
                                     areasList);
         layersList.add(treeLayer);
 
-        AxisAttributes axis = new AxisAttributes(continuousTreeModel.getxCoordinate(),
-                                                 continuousTreeModel.getyCoordinate());
+        AxisAttributes axis = new AxisAttributes(model.getxCoordinate(),
+                                                 model.getyCoordinate());
 
         SpreadData spreadData = new SpreadData(timeLine, //
                                                axis, //
@@ -944,24 +962,5 @@ public class ContinuousTreeController {
 
         return new GsonBuilder().create().toJson(spreadData);
     }
-
-    // private String ControllerUtils.getSessionId(String authorizationHeader) throws SpreadException {
-    //     String sessionId = null;
-    //     try {
-    //         String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
-    //         sessionId = TokenUtils.parseJWT(TokenUtils.getBearerToken(authorizationHeader), secret)
-    //             .get(TokenUtils.SESSION_ID)
-    //             .toString();
-    //     } catch (Exception e) {
-    //         throw new SpreadException(SpreadException.Type.AUTHORIZATION_EXCEPTION,
-    //                                   "Exception when parsing JWT token", new String[][] {
-    //                                       {"authorizationHeader", authorizationHeader},
-    //                                       {"method", new Throwable()
-    //                                        .getStackTrace()[0]
-    //                                        .getMethodName()},
-    //                                   });
-    //     }
-    //     return sessionId;
-    // }
 
 }

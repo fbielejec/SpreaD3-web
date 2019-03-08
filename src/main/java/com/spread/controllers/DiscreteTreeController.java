@@ -1,6 +1,8 @@
 package com.spread.controllers;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Optional;
 import java.util.Set;
@@ -20,7 +22,6 @@ import com.spread.data.attributable.Line;
 import com.spread.data.attributable.Point;
 import com.spread.data.geojson.GeoJsonData;
 import com.spread.data.primitive.Coordinate;
-import com.spread.domain.ContinuousTreeModelEntity;
 import com.spread.domain.DiscreteAttributeEntity;
 import com.spread.domain.DiscreteTreeModelEntity;
 import com.spread.domain.IModel;
@@ -438,6 +439,14 @@ public class DiscreteTreeController {
             sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
             DiscreteTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            if(model == null) {
+                String message = "Session with that id does not exist";
+                logger.log(ILogger.WARN, message, new String[][] {
+                        {"sessionId", sessionId},
+                        {"request-ip", request.getRemoteAddr()}
+                    });
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
+            };
 
             final String threadLocalSessionId = sessionId;
             longRunningTaskExecutor.execute(new Runnable() {
@@ -455,7 +464,7 @@ public class DiscreteTreeController {
                             storageService.write(threadLocalSessionId, "data.json", json.getBytes());
 
                             model.setOutputFilename(storageService.loadAsResource(threadLocalSessionId, "data.json").getFile().getAbsolutePath());
-                            model.setStatus(ContinuousTreeModelEntity.Status.OUTPUT_READY);
+                            model.setStatus(IModel.Status.OUTPUT_READY);
                             modelRepository.save(model);
 
                             logger.log(ILogger.INFO, "Output succesfully generated", new String[][] {
@@ -464,7 +473,7 @@ public class DiscreteTreeController {
                                 });
 
                         } catch (Exception e) {
-                            model.setStatus(ContinuousTreeModelEntity.Status.EXCEPTION_OCCURED);
+                            model.setStatus(IModel.Status.EXCEPTION_OCCURED);
                             modelRepository.save(model);
 
                             logger.log(ILogger.ERROR, e, new String[][] {
@@ -492,11 +501,235 @@ public class DiscreteTreeController {
         }
     }
 
-    // TODO:  queue ipfs
+    @RequestMapping(path = "/ipfs", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Object> putIpfs(HttpServletRequest request,
+                                          @RequestHeader(value = "Authorization") String authorizationHeader) {
 
-    // TODO:  GET status
+        String sessionId = "null";
 
-    // TODO:  GET model
+        try {
+
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
+
+            DiscreteTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            if(model == null) {
+                String message = "Session with that id does not exist";
+                logger.log(ILogger.WARN, message, new String[][] {
+                        {"sessionId", sessionId},
+                        {"request-ip", request.getRemoteAddr()},
+                    });
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
+            };
+
+            // run in background
+            final String threadLocalSessionId = sessionId;
+
+            longRunningTaskExecutor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        try {
+
+                            logger.log(ILogger.INFO, "Copying visualisation", new String[][] {
+                                    {"sessionId", threadLocalSessionId},
+                                });
+
+                            Path source = visualizationService.getVisualisationDirectory();
+                            storageService.copy(threadLocalSessionId, source);
+
+                            logger.log(ILogger.INFO, "Copied visualisation", new String[][] {
+                                    {"sessionId", threadLocalSessionId},
+                                    {"from", source.toString()},
+                                    {"to", threadLocalSessionId},
+                                });
+
+                            logger.log(ILogger.INFO, "Publishing to ipfs", new String[][] {
+                                    {"sessionId", threadLocalSessionId},
+                                });
+
+                            String hash = ipfsService.addDirectory(storageService.getSubdirectoryLocation(threadLocalSessionId));
+                            model.setIpfsHash(hash);
+                            model.setStatus(IModel.Status.IPFS_HASH_READY);
+                            modelRepository.save(model);
+
+                            logger.log(ILogger.INFO, "Published to ipfs", new String[][] {
+                                    {"sessionId", threadLocalSessionId},
+                                    {"ipfsHash", hash},
+                                });
+
+                        } catch (Exception e) {
+                            model.setStatus(IModel.Status.EXCEPTION_OCCURED);
+                            modelRepository.save(model);
+
+                            logger.log(ILogger.ERROR, e, new String[][] {
+                                    {"sessionId", threadLocalSessionId},
+                                    {"stacktrace", LoggingUtils.getStackTrace(e)}
+                                });
+                        }
+                    }
+                });
+
+            // return immediately
+            model.setStatus(IModel.Status.PUBLISHING_IPFS);
+            modelRepository.save(model);
+
+            logger.log(ILogger.INFO, "PUT /ipfs", new String[][] {
+                    {"sessionId", sessionId},
+                    {"request-ip" , request.getRemoteAddr()}
+                });
+
+            return ResponseEntity.status(HttpStatus.ACCEPTED).header("Location", sessionId).body(ControllerUtils.jsonResponse("ACCEPTED"));
+        } catch (SignatureException e) {
+            logger.log(ILogger.ERROR, e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ControllerUtils.jsonResponse(e.getMessage()));
+        } catch (SpreadException e) {
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+        }
+    }
+
+    @RequestMapping(path = "/ipfs", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> getIpfsHash(HttpServletRequest request,
+                                              @RequestHeader(value = "Authorization") String authorizationHeader) {
+
+        String sessionId = "null";
+
+        try {
+
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
+
+            DiscreteTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            if(model == null) {
+                String message = "Session with that id does not exist";
+                logger.log(ILogger.WARN, message, new String[][] {
+                        {"sessionId", sessionId},
+                        {"request-ip", request.getRemoteAddr()},
+                    });
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
+            };
+
+            if(!(model.getStatus() == IModel.Status.IPFS_HASH_READY)) {
+                String message = "Client should poll for status";
+                return ResponseEntity.status(HttpStatus.SEE_OTHER)
+                    .header("Location", "/continuous/status")
+                    .body(ControllerUtils.jsonResponse(message));
+            }
+
+            logger.log(ILogger.INFO, "GET /ipfs", new String[][] {
+                    {"sessionId", sessionId},
+                    {"request-ip" , request.getRemoteAddr()}
+                });
+
+            return ResponseEntity.status(HttpStatus.OK).body(ControllerUtils.jsonResponse(model.getIpfsHash()));
+        } catch (SignatureException e) {
+            logger.log(ILogger.ERROR, e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ControllerUtils.jsonResponse(e.getMessage()));
+        } catch (SpreadException e) {
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("Authorication", "Bearer")
+                .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+        }
+    }
+
+    @RequestMapping(path = "/status", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> getStatus(HttpServletRequest request,
+                                            @RequestHeader(value = "Authorization") String authorizationHeader) {
+
+        String sessionId = "null";
+
+        try {
+
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
+
+            DiscreteTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            if(model == null) {
+                String message = "Session with that id does not exist";
+                logger.log(ILogger.WARN, message, new String[][] {
+                        {"sessionId", sessionId},
+                        {"request-ip", request.getRemoteAddr()}
+                    });
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
+            };
+
+            String status = model.getStatus().toString();
+            String json = new GsonBuilder().create().toJson(Collections.singletonMap("status", status));
+
+            logger.log(ILogger.INFO, "GET /status", new String[][] {
+                    {"sessionId", sessionId},
+                    {"status" , status},
+                    {"request-ip" , request.getRemoteAddr()},
+                });
+
+            return ResponseEntity.status(HttpStatus.OK).body(json);
+        } catch (SignatureException e) {
+            logger.log(ILogger.ERROR, e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ControllerUtils.jsonResponse(e.getMessage()));
+        } catch (SpreadException e) {
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("Authorication", "Bearer")
+                .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+        }
+    }
+
+    @RequestMapping(path = "/model", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<DiscreteTreeModelEntity> getModel(HttpServletRequest request,
+                                                            @RequestHeader(value = "Authorization") String authorizationHeader) {
+
+        String sessionId = "null";
+
+        try {
+
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
+
+            DiscreteTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            if(model == null) {
+                String message = "Session with that id does not exist";
+                logger.log(ILogger.WARN, message, new String[][] {
+                        {"sessionId", sessionId},
+                        {"request-ip" , request.getRemoteAddr()}
+                    });
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new DiscreteTreeModelEntity());
+            };
+
+            logger.log(ILogger.INFO, "GET /model", new String[][] {
+                    {"sessionId", sessionId},
+                    {"locationAttribute", model.getLocationAttribute()},
+                    {"mrsd", model.getMrsd()},
+                    {"timescaleMultiplier", Optional.ofNullable(model.getTimescaleMultiplier()).toString()},
+                    {"request-ip", request.getRemoteAddr()},
+                });
+
+            return ResponseEntity.status(HttpStatus.OK).body(model);
+        } catch (SignatureException e) {
+            logger.log(ILogger.ERROR, e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        } catch (SpreadException e) {
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("Authorication", "Bearer")
+                .body(null);
+        }
+    }
 
     private String doGenerateOutput (DiscreteTreeModelEntity model) throws SpreadException, IOException, ImportException {
 

@@ -46,6 +46,9 @@ public class DiscreteTreeModelEntity implements IModel {
     @Column(name = "output_filename", nullable = true)
     private String outputFilename;
 
+    @Column(name = "ipfs_hash", nullable = true)
+    private String ipfsHash;
+
     @JsonManagedReference("tree-attributes")
     @OneToMany(mappedBy = "tree", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<DiscreteAttributeEntity> attributes;
