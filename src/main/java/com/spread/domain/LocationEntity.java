@@ -16,7 +16,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "discrete_locations")
+@Table(name = "locations")
 @Data @NoArgsConstructor  @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class LocationEntity {
 

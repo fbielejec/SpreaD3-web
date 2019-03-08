@@ -7,6 +7,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
@@ -52,11 +53,11 @@ public class ContinuousTreeModelEntity implements IModel {
     private Boolean hasExternalAnnotations;
 
     @JsonManagedReference("tree-attributes")
-    @OneToMany(mappedBy = "tree", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "tree", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<ContinuousAttributeEntity> attributes;
 
     @JsonManagedReference("tree-hpd-levels")
-    @OneToMany(mappedBy = "tree", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "tree", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<HpdLevelEntity> hpdLevels;
 
     @Enumerated(EnumType.STRING)

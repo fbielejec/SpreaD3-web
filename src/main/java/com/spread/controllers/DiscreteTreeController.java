@@ -20,12 +20,15 @@ import com.spread.data.attributable.Line;
 import com.spread.data.attributable.Point;
 import com.spread.data.geojson.GeoJsonData;
 import com.spread.data.primitive.Coordinate;
+import com.spread.domain.ContinuousTreeModelEntity;
 import com.spread.domain.DiscreteAttributeEntity;
 import com.spread.domain.DiscreteTreeModelEntity;
+import com.spread.domain.IModel;
 import com.spread.domain.LocationEntity;
 import com.spread.exceptions.SpreadException;
 import com.spread.loggers.AbstractLogger;
 import com.spread.loggers.ILogger;
+import com.spread.loggers.LoggingUtils;
 import com.spread.parsers.DiscreteTreeParser;
 import com.spread.parsers.GeoJSONParser;
 import com.spread.parsers.TimeParser;
@@ -306,7 +309,6 @@ public class DiscreteTreeController {
         }
     }
 
-
     @RequestMapping(path = "/mrsd", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> setMrsd(HttpServletRequest request,
                                           @RequestHeader(value = "Authorization") String authorizationHeader,
@@ -362,7 +364,6 @@ public class DiscreteTreeController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
         }
     }
-
 
     @RequestMapping(path = "/timescale-multiplier", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> setTimescaleMultiplier(HttpServletRequest request,
@@ -425,12 +426,77 @@ public class DiscreteTreeController {
         }
     }
 
+    @RequestMapping(path = "/output", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Object> getOutput(HttpServletRequest request,
+                                            @RequestHeader(value = "Authorization") String authorizationHeader) {
 
+        String sessionId = "null";
 
+        try {
 
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
+            DiscreteTreeModelEntity model = modelRepository.findBySessionId(sessionId);
 
+            final String threadLocalSessionId = sessionId;
+            longRunningTaskExecutor.execute(new Runnable() {
+                    @Override
+                    public void run() {
 
+                        try {
+
+                            logger.log(ILogger.INFO, "Generating output", new String[][] {
+                                    {"sessionId", threadLocalSessionId},
+                                    {"request-ip", request.getRemoteAddr()}
+                                });
+
+                            String json = doGenerateOutput(model);
+                            storageService.write(threadLocalSessionId, "data.json", json.getBytes());
+
+                            model.setOutputFilename(storageService.loadAsResource(threadLocalSessionId, "data.json").getFile().getAbsolutePath());
+                            model.setStatus(ContinuousTreeModelEntity.Status.OUTPUT_READY);
+                            modelRepository.save(model);
+
+                            logger.log(ILogger.INFO, "Output succesfully generated", new String[][] {
+                                    {"sessionId", threadLocalSessionId},
+                                    {"request-ip", request.getRemoteAddr()}
+                                });
+
+                        } catch (Exception e) {
+                            model.setStatus(ContinuousTreeModelEntity.Status.EXCEPTION_OCCURED);
+                            modelRepository.save(model);
+
+                            logger.log(ILogger.ERROR, e, new String[][] {
+                                    {"sessionId", threadLocalSessionId},
+                                    {"request-ip", request.getRemoteAddr()},
+                                    {"stacktrace", LoggingUtils.getStackTrace(e)}
+                                });
+                        }
+                    }
+                });
+
+            model.setStatus(IModel.Status.GENERATING_OUTPUT);
+            modelRepository.save(model);
+
+            logger.log(ILogger.INFO, "PUT /output", new String[][] {
+                    {"sessionId", sessionId},
+                    {"request-ip" , request.getRemoteAddr()}
+                });
+
+            // return immediately
+            return ResponseEntity.status(HttpStatus.ACCEPTED).header("Location", sessionId).body(ControllerUtils.jsonResponse("ACCEPTED"));
+        } catch (SpreadException | SignatureException e) {
+            logger.log(ILogger.ERROR, e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+        }
+    }
+
+    // TODO:  queue ipfs
+
+    // TODO:  GET status
+
+    // TODO:  GET model
 
     private String doGenerateOutput (DiscreteTreeModelEntity model) throws SpreadException, IOException, ImportException {
 
@@ -459,8 +525,7 @@ public class DiscreteTreeController {
         // ---TIME---//
 
         TimeParser timeParser = new TimeParser(model.getMrsd ());
-        timeLine = timeParser.getTimeLine(rootedTree.getHeight(rootedTree
-                                                               .getRootNode()));
+        timeLine = timeParser.getTimeLine(rootedTree.getHeight(rootedTree.getRootNode()));
 
         System.out.println("Parsed time line");
 
@@ -499,10 +564,9 @@ public class DiscreteTreeController {
         LinkedList<Point> countsList = treeParser.getCountsList();
 
         String countsLayerId = ParsersUtils.splitString(model.getTreeFilename (), "/");
-        Layer countsLayer = new Layer(countsLayerId, //
-                                      "Counts layer", //
-                                      countsList //
-                                      );
+        Layer countsLayer = new Layer(countsLayerId,
+                                      "Counts layer",
+                                      countsList);
 
         layersList.add(countsLayer);
 
@@ -514,11 +578,10 @@ public class DiscreteTreeController {
         LinkedList<Point> pointsList = treeParser.getPointsList();
 
         String treeLayerId = ParsersUtils.splitString(model.getTreeFilename (), "/");
-        Layer treeLayer = new Layer(treeLayerId, //
-                                    "Tree layer", //
-                                    pointsList, //
-                                    linesList //
-                                    );
+        Layer treeLayer = new Layer(treeLayerId,
+                                    "Tree layer",
+                                    pointsList,
+                                    linesList);
 
         layersList.add(treeLayer);
 
@@ -602,12 +665,5 @@ public class DiscreteTreeController {
 
         return coordinateRange;
     }
-
-
-
-
-
-
-
 
 }

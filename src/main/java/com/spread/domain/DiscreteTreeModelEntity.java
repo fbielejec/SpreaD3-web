@@ -7,6 +7,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
@@ -42,12 +43,15 @@ public class DiscreteTreeModelEntity implements IModel {
     @Column(name = "geojson_filename", nullable = true)
     private String geojsonFilename;
 
+    @Column(name = "output_filename", nullable = true)
+    private String outputFilename;
+
     @JsonManagedReference("tree-attributes")
-    @OneToMany(mappedBy = "tree", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "tree", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<DiscreteAttributeEntity> attributes;
 
     @JsonManagedReference("tree-locations")
-    @OneToMany(mappedBy = "tree", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "tree", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<LocationEntity> locations;
 
     @Enumerated(EnumType.STRING)

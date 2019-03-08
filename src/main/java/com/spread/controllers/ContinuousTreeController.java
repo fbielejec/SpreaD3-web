@@ -732,42 +732,42 @@ public class ContinuousTreeController {
         }
     }
 
-    // @RequestMapping(path = "/ipfs", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    // public ResponseEntity<String> getIpfsHash(HttpServletRequest request,
-    //                                           @RequestHeader(value = "Authorization") String authorizationHeader) {
+    @RequestMapping(path = "/ipfs", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> getIpfsHash(HttpServletRequest request,
+                                              @RequestHeader(value = "Authorization") String authorizationHeader) {
 
-    //     String sessionId = "null";
+        String sessionId = "null";
 
-    //     try {
+        try {
 
-    //         String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
-    //         sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
-    //         ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
-    //         if(!(continuousTreeModel.getStatus() == ContinuousTreeModelEntity.Status.IPFS_HASH_READY)) {
-    //             String message = "Client should poll for status";
-    //             return ResponseEntity.status(HttpStatus.SEE_OTHER).header("Location", "/continuous/status").body(ControllerUtils.jsonResponse(message));
-    //         }
+            ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+            if(!(continuousTreeModel.getStatus() == ContinuousTreeModelEntity.Status.IPFS_HASH_READY)) {
+                String message = "Client should poll for status";
+                return ResponseEntity.status(HttpStatus.SEE_OTHER).header("Location", "/continuous/status").body(ControllerUtils.jsonResponse(message));
+            }
 
-    //         logger.log(ILogger.INFO, "GET /ipfs", new String[][] {
-    //                 {"sessionId", sessionId},
-    //                 {"request-ip" , request.getRemoteAddr()}
-    //             });
+            logger.log(ILogger.INFO, "GET /ipfs", new String[][] {
+                    {"sessionId", sessionId},
+                    {"request-ip" , request.getRemoteAddr()}
+                });
 
-    //         return ResponseEntity.status(HttpStatus.OK).body(ControllerUtils.jsonResponse(continuousTreeModel.getIpfsHash()));
-    //     } catch (SignatureException e) {
-    //         logger.log(ILogger.ERROR, e);
-    //         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ControllerUtils.jsonResponse(e.getMessage()));
-    //     } catch (SpreadException e) {
-    //         logger.log(ILogger.ERROR, e, new String[][] {
-    //                 {"sessionId", sessionId},
-    //             },
-    //             e.getMeta());
-    //         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-    //             .header("Authorication", "Bearer")
-    //             .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
-    //     }
-    // }
+            return ResponseEntity.status(HttpStatus.OK).body(ControllerUtils.jsonResponse(continuousTreeModel.getIpfsHash()));
+        } catch (SignatureException e) {
+            logger.log(ILogger.ERROR, e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ControllerUtils.jsonResponse(e.getMessage()));
+        } catch (SpreadException e) {
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("Authorication", "Bearer")
+                .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+        }
+    }
 
     @RequestMapping(path = "/status", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> getStatus(HttpServletRequest request,
