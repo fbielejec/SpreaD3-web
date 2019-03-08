@@ -30,10 +30,6 @@ public class DiscreteTreeModelEntity implements IModel {
     @Column(name = "tree_filename", nullable = false)
     private String treeFilename;
 
-    // TODO : remove use Locations relation instead
-    @Column(name = "locations_filename", nullable = true)
-    private String locationsFilename;
-
     @Column(name = "location_attribute", nullable = true)
     private String locationAttribute;
 
@@ -49,6 +45,10 @@ public class DiscreteTreeModelEntity implements IModel {
     @JsonManagedReference("tree-attributes")
     @OneToMany(mappedBy = "tree", cascade = CascadeType.ALL)
     private Set<DiscreteAttributeEntity> attributes;
+
+    @JsonManagedReference("tree-locations")
+    @OneToMany(mappedBy = "tree", cascade = CascadeType.ALL)
+    private Set<LocationEntity> locations;
 
     @Enumerated(EnumType.STRING)
     private Status status;

@@ -22,10 +22,10 @@ import com.spread.data.geojson.GeoJsonData;
 import com.spread.data.primitive.Coordinate;
 import com.spread.domain.DiscreteAttributeEntity;
 import com.spread.domain.DiscreteTreeModelEntity;
+import com.spread.domain.LocationEntity;
 import com.spread.exceptions.SpreadException;
 import com.spread.loggers.AbstractLogger;
 import com.spread.loggers.ILogger;
-import com.spread.parsers.DiscreteLocationsParser;
 import com.spread.parsers.DiscreteTreeParser;
 import com.spread.parsers.GeoJSONParser;
 import com.spread.parsers.TimeParser;
@@ -44,6 +44,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -137,13 +138,13 @@ public class DiscreteTreeController {
         } catch (SignatureException e) {
             logger.log(ILogger.ERROR, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse(e.getMessage()));
-            } catch (IOException | ImportException e) {
-                String message = Optional.ofNullable(e.getMessage()).orElse("Exception encountered when importing tree file");
-                logger.log(ILogger.ERROR, e, new String[][] {
-                        {"message", message},
-                        {"sessionId", sessionId},
-                    });
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ControllerUtils.jsonResponse("INTERNAL SERVER ERROR"));
+        } catch (IOException | ImportException e) {
+            String message = Optional.ofNullable(e.getMessage()).orElse("Exception encountered when importing tree file");
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"message", message},
+                    {"sessionId", sessionId},
+                });
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ControllerUtils.jsonResponse("INTERNAL SERVER ERROR"));
         } catch (SpreadException e) {
             logger.log(ILogger.ERROR, e, new String[][] {
                     {"sessionId", sessionId},
@@ -154,12 +155,275 @@ public class DiscreteTreeController {
     }
 
 
-// TODO : locations endpoint
+    @RequestMapping(path = "/geojson", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Object> uploadGeojson(HttpServletRequest request,
+                                                @RequestHeader(value = "Authorization") String authorizationHeader,
+                                                @RequestParam(value = "file", required = true) MultipartFile file)  {
+
+        String sessionId = "null";
+
+        try {
+
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
+
+            String filename = file.getOriginalFilename();
+            if (storageService.exists(sessionId, file)) {
+                storageService.delete(sessionId, filename);
+                logger.log(ILogger.INFO, "Deleting previously persisted geojson file", new String[][] {
+                        {"sessionId", sessionId},
+                        {"filename", filename},
+                        {"request-ip", request.getRemoteAddr()}
+                    });
+            }
+
+            storageService.store(sessionId, file);
+
+            DiscreteTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            model.setGeojsonFilename(storageService.loadAsResource(sessionId, filename).getFile().getAbsolutePath());
+            modelRepository.save(model);
+
+            logger.log(ILogger.INFO, "geojson file successfully persisted", new String[][] {
+                    {"sessionId", sessionId},
+                    {"filename", filename},
+                    {"request-ip", request.getRemoteAddr()}
+                });
+
+            return new ResponseEntity<>(HttpStatus.CREATED);
+        } catch (SignatureException e) {
+            logger.log(ILogger.ERROR, e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ControllerUtils.jsonResponse(e.getMessage()));
+        } catch (IOException e) {
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                    {"request-ip", request.getRemoteAddr()}
+                });
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ControllerUtils.jsonResponse("INTERNAL SERVER ERROR"));
+        } catch (SpreadException e) {
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("Authorication", "Bearer")
+                .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+        }
+    }
+
+    @RequestMapping(path = "/locations", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> setHpdLevel(HttpServletRequest request,
+                                              @RequestHeader(value = "Authorization") String authorizationHeader,
+                                              @RequestBody (required = true) Set<LocationEntity> locations) {
+
+        String sessionId = "null";
+
+        try {
+
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
+
+            DiscreteTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            if(model == null) {
+                String message = "Session with that id does not exist";
+                logger.log(ILogger.WARN, message, new String[][] {
+                        {"sessionId", sessionId},
+                        {"request-ip", request.getRemoteAddr()},
+                    });
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
+            };
+
+            locations.forEach((l) -> l.setTree(model));
+
+            model.setLocations(locations);
+            modelRepository.save(model);
+
+            logger.log(ILogger.INFO, "Persisted discrete locations", new String[][] {
+                    {"sessionId", sessionId},
+                    {"request-ip", request.getRemoteAddr()},
+                    {"count", String.valueOf (locations.size())},
+                });
+
+            return ResponseEntity.status(HttpStatus.OK).body(ControllerUtils.jsonResponse("OK"));
+        } catch (SignatureException e) {
+            logger.log(ILogger.ERROR, e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNATHORIZED"));
+        } catch (SpreadException e) {
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+        }
+    }
+
+    @RequestMapping(path = "/location" , method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Object> setyCoordinates(HttpServletRequest request,
+                                                  @RequestHeader(value = "Authorization") String authorizationHeader,
+                                                  @RequestParam(value = "value", required = true) String attribute) {
+
+        String sessionId = "null";
+
+        try {
+
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
+
+            DiscreteTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            if(model == null) {
+                String message = "Session with that id does not exist";
+                logger.log(ILogger.WARN, message, new String[][] {
+                        {"sessionId", sessionId},
+                        {"request-ip", request.getRemoteAddr()}
+                    });
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
+            };
+
+            model.setLocationAttribute(attribute);
+            modelRepository.save(model);
+
+            logger.log(ILogger.INFO, "location attribute successfully set", new String[][] {
+                    {"sessionId", sessionId},
+                    {"attribute", attribute},
+                    {"request-ip", request.getRemoteAddr()}
+                });
+
+            return ResponseEntity.status(HttpStatus.OK).body(ControllerUtils.jsonResponse("OK"));
+        } catch (SignatureException e) {
+            logger.log(ILogger.ERROR, e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("Authorication", "Bearer")
+                .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+        } catch (SpreadException e) {
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("Authorication", "Bearer")
+                .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+        }
+    }
 
 
+    @RequestMapping(path = "/mrsd", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> setMrsd(HttpServletRequest request,
+                                          @RequestHeader(value = "Authorization") String authorizationHeader,
+                                          @RequestParam(value = "value") String mrsd) {
+
+        String sessionId = "null";
+
+        try {
+
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
+
+            if (!TimeParser.isParseableDate(mrsd)) {
+                String message = "Mrsd parameter is in a wrong format";
+                logger.log(ILogger.ERROR, message, new String[][] {
+                        {"sessionId", sessionId},
+                        {"mrsd", mrsd},
+                        {"formatToUse", "yyyy" + TimeParser.separator + "MM"
+                         + TimeParser.separator + "dd"},
+                        {"request-ip", request.getRemoteAddr()}
+                    });
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
+            }
+
+            DiscreteTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            if(model == null) {
+                String message = "Session with that id does not exist";
+                logger.log(ILogger.WARN, message, new String[][] {
+                        {"sessionId", sessionId},
+                        {"request-ip", request.getRemoteAddr()}
+                    });
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
+            };
+
+            model.setMrsd(mrsd);
+            modelRepository.save(model);
+
+            logger.log(ILogger.INFO, "Mrsd parameter successfully set", new String[][] {
+                    {"sessionId", sessionId},
+                    {"mrsd", mrsd},
+                    {"request-ip", request.getRemoteAddr()}
+                });
+
+            return ResponseEntity.status(HttpStatus.OK).body(ControllerUtils.jsonResponse("OK"));
+        } catch (SignatureException e) {
+            logger.log(ILogger.ERROR, e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse(e.getMessage()));
+        } catch (SpreadException e) {
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+        }
+    }
 
 
+    @RequestMapping(path = "/timescale-multiplier", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Object> setTimescaleMultiplier(HttpServletRequest request,
+                                                         @RequestHeader(value = "Authorization") String authorizationHeader,
+                                                         @RequestParam(value = "value", required = true) Double timescaleMultiplier) {
 
+        String sessionId = "null";
+
+        try {
+
+            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
+
+            Double min = Double.MIN_NORMAL;
+            Double max = Double.MAX_VALUE;
+
+            if (!ControllerUtils.isInInterval(timescaleMultiplier, min, max)) {
+                String message = "TimescaleMultiplier value is outside of permitted interval";
+                logger.log(ILogger.ERROR, message, new String[][] {
+                        {"sessionId", sessionId},
+                        {"min", min.toString()},
+                        {"max", max.toString()},
+                        {"timescaleMultiplier", timescaleMultiplier.toString()},
+                        {"request-ip", request.getRemoteAddr()}
+                    });
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
+            }
+
+            DiscreteTreeModelEntity model = modelRepository.findBySessionId(sessionId);
+            if(model == null) {
+                String message = "Session with that id does not exist";
+                logger.log(ILogger.WARN, message, new String[][] {
+                        {"sessionId", sessionId},
+                        {"request-ip", request.getRemoteAddr()}
+                    });
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
+            };
+
+            model.setTimescaleMultiplier(timescaleMultiplier);
+            modelRepository.save(model);
+
+            logger.log(ILogger.INFO, "Timescale multiplier parameter successfully set", new String[][] {
+                    {"sessionId", sessionId},
+                    {"timescaleMultiplier", timescaleMultiplier.toString()},
+                    {"request-ip", request.getRemoteAddr()}
+                });
+
+            return ResponseEntity.status(HttpStatus.OK).body(ControllerUtils.jsonResponse("OK"));
+        } catch (SignatureException e) {
+            logger.log(ILogger.ERROR, e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ControllerUtils.jsonResponse(e.getMessage()));
+        } catch (SpreadException e) {
+            logger.log(ILogger.ERROR, e, new String[][] {
+                    {"sessionId", sessionId},
+                },
+                e.getMeta());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("Authorication", "Bearer")
+                .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+        }
+    }
 
 
 
@@ -184,12 +448,9 @@ public class DiscreteTreeController {
 
         System.out.println("Imported tree");
 
-        // TODO : remove file use, Locations colection instead
-        DiscreteLocationsParser locationsParser = new DiscreteLocationsParser(model.getLocationsFilename(), false
-                                                                              // model.hasHeader()
-                                                                              // settings.locationsFilename, settings.hasHeader
-                                                                              );
-        locationsList = locationsParser.parseLocations();
+        locationsList = model.getLocations().stream().map(l -> {
+                return new Location(l.getName(), new Coordinate (l.getLatitude(), l.getLongitude()));
+            }).collect(Collectors.toCollection(LinkedList::new));
 
         System.out.println("Imported locations");
 

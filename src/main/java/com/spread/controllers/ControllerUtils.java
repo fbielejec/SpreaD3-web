@@ -31,4 +31,16 @@ public class ControllerUtils {
         return sessionId;
     }
 
+    public static Boolean isInInterval(Double value, Double min, Double max) {
+        if (value >= min && value <= max)
+            return true;
+        return false;
+    }
+
+    public static Boolean isInInterval(Integer value, Integer min, Integer max) {
+        if (value >= min && value <= max)
+            return true;
+        return false;
+    }
+
 }

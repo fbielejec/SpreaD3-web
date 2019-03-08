@@ -207,77 +207,6 @@ public class ContinuousTreeController {
         }
     }
 
-    @RequestMapping(path = "/attributes", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Set<String>> attributes(HttpServletRequest request,
-                                                  @RequestHeader(value = "Authorization") String authorizationHeader) {
-
-        String sessionId = "null";
-
-        try {
-
-            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
-            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
-
-            ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
-
-            Set<String> attributes = continuousTreeModel.getAttributes().stream().map(attribute -> {
-                    return attribute.getName();
-                }).collect(Collectors.toSet());
-
-            logger.log(ILogger.INFO, "GET /attributes", new String[][] {
-                    {"sessionId", sessionId},
-                    {"request-ip" , request.getRemoteAddr()},
-                });
-
-            return ResponseEntity.status(HttpStatus.OK).body(attributes);
-        } catch (SignatureException e) {
-            logger.log(ILogger.ERROR, e);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(null);
-        } catch (SpreadException e) {
-            logger.log(ILogger.ERROR, e, new String[][] {
-                    {"sessionId", sessionId},
-                },
-                e.getMeta());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(null);
-        }
-    }
-
-    @RequestMapping(path = "/hpd-levels", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Set<String>> hpdLevels(HttpServletRequest request,
-                                                 @RequestHeader(value = "Authorization") String authorizationHeader)
-        throws IOException, ImportException {
-
-        String sessionId = "null";
-
-        try {
-
-            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
-            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
-
-            ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
-
-            Set<String> hpdLevels = continuousTreeModel.getHpdLevels().stream().map(attribute -> {
-                    return attribute.getName();
-                }).collect(Collectors.toSet());
-
-            logger.log(ILogger.INFO, "GET /hpd-levels", new String[][] {
-                    {"sessionId", sessionId},
-                    {"request-ip" , request.getRemoteAddr()},
-                });
-
-            return ResponseEntity.status(HttpStatus.OK).body(hpdLevels);
-        } catch (SignatureException e) {
-            logger.log(ILogger.ERROR, e);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(null);
-        } catch (SpreadException e) {
-            logger.log(ILogger.ERROR, e, new String[][] {
-                    {"sessionId", sessionId},
-                },
-                e.getMeta());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("Authorication", "Bearer").body(null);
-        }
-    }
-
     @RequestMapping(path = "/hpd-level", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> setHpdLevel(HttpServletRequest request,
                                               @RequestHeader(value = "Authorization") String authorizationHeader,
@@ -292,7 +221,7 @@ public class ContinuousTreeController {
 
             Integer min = 0;
             Integer max = 100;
-            if (!isInInterval(Integer.valueOf(hpdLevel), min, max)) {
+            if (!ControllerUtils.isInInterval(Integer.valueOf(hpdLevel), min, max)) {
                 String message = "Hpd level parameter is outside of permitted interval";
                 logger.log(ILogger.ERROR, message, new String[][] {
                         {"sessionId", sessionId},
@@ -336,7 +265,7 @@ public class ContinuousTreeController {
         }
     }
 
-    @RequestMapping(value = { "/coordinates/y", "/coordinates/latitude" }, method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(path = { "/coordinates/y", "/coordinates/latitude" }, method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> setyCoordinates(HttpServletRequest request,
                                                   @RequestHeader(value = "Authorization") String authorizationHeader,
                                                   @RequestParam(value = "value", required = true) String attribute) {
@@ -384,7 +313,7 @@ public class ContinuousTreeController {
         }
     }
 
-    @RequestMapping(value = { "/coordinates/x", "/coordinates/longitude" }, method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(path = { "/coordinates/x", "/coordinates/longitude" }, method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> setxCoordinates(HttpServletRequest request,
                                                   @RequestHeader(value = "Authorization") String authorizationHeader,
                                                   @RequestParam(value = "value", required = true) String attribute) {
@@ -547,7 +476,7 @@ public class ContinuousTreeController {
             Double min = Double.MIN_NORMAL;
             Double max = Double.MAX_VALUE;
 
-            if (!isInInterval(timescaleMultiplier, min, max)) {
+            if (!ControllerUtils.isInInterval(timescaleMultiplier, min, max)) {
                 String message = "TimescaleMultiplier value is outside of permitted interval";
                 logger.log(ILogger.ERROR, message, new String[][] {
                         {"sessionId", sessionId},
@@ -803,42 +732,42 @@ public class ContinuousTreeController {
         }
     }
 
-    @RequestMapping(path = "/ipfs", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> getIpfsHash(HttpServletRequest request,
-                                              @RequestHeader(value = "Authorization") String authorizationHeader) {
+    // @RequestMapping(path = "/ipfs", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    // public ResponseEntity<String> getIpfsHash(HttpServletRequest request,
+    //                                           @RequestHeader(value = "Authorization") String authorizationHeader) {
 
-        String sessionId = "null";
+    //     String sessionId = "null";
 
-        try {
+    //     try {
 
-            String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
-            sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
+    //         String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
+    //         sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
 
-            ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
-            if(!(continuousTreeModel.getStatus() == ContinuousTreeModelEntity.Status.IPFS_HASH_READY)) {
-                String message = "Client should poll for status";
-                return ResponseEntity.status(HttpStatus.SEE_OTHER).header("Location", "/continuous/status").body(ControllerUtils.jsonResponse(message));
-            }
+    //         ContinuousTreeModelEntity continuousTreeModel = modelRepository.findBySessionId(sessionId);
+    //         if(!(continuousTreeModel.getStatus() == ContinuousTreeModelEntity.Status.IPFS_HASH_READY)) {
+    //             String message = "Client should poll for status";
+    //             return ResponseEntity.status(HttpStatus.SEE_OTHER).header("Location", "/continuous/status").body(ControllerUtils.jsonResponse(message));
+    //         }
 
-            logger.log(ILogger.INFO, "GET /ipfs", new String[][] {
-                    {"sessionId", sessionId},
-                    {"request-ip" , request.getRemoteAddr()}
-                });
+    //         logger.log(ILogger.INFO, "GET /ipfs", new String[][] {
+    //                 {"sessionId", sessionId},
+    //                 {"request-ip" , request.getRemoteAddr()}
+    //             });
 
-            return ResponseEntity.status(HttpStatus.OK).body(ControllerUtils.jsonResponse(continuousTreeModel.getIpfsHash()));
-        } catch (SignatureException e) {
-            logger.log(ILogger.ERROR, e);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ControllerUtils.jsonResponse(e.getMessage()));
-        } catch (SpreadException e) {
-            logger.log(ILogger.ERROR, e, new String[][] {
-                    {"sessionId", sessionId},
-                },
-                e.getMeta());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .header("Authorication", "Bearer")
-                .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
-        }
-    }
+    //         return ResponseEntity.status(HttpStatus.OK).body(ControllerUtils.jsonResponse(continuousTreeModel.getIpfsHash()));
+    //     } catch (SignatureException e) {
+    //         logger.log(ILogger.ERROR, e);
+    //         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ControllerUtils.jsonResponse(e.getMessage()));
+    //     } catch (SpreadException e) {
+    //         logger.log(ILogger.ERROR, e, new String[][] {
+    //                 {"sessionId", sessionId},
+    //             },
+    //             e.getMeta());
+    //         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+    //             .header("Authorication", "Bearer")
+    //             .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
+    //     }
+    // }
 
     @RequestMapping(path = "/status", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> getStatus(HttpServletRequest request,
@@ -1034,17 +963,5 @@ public class ContinuousTreeController {
     //     }
     //     return sessionId;
     // }
-
-    private Boolean isInInterval(Double value, Double min, Double max) {
-        if (value >= min && value <= max)
-            return true;
-        return false;
-    }
-
-    private Boolean isInInterval(Integer value, Integer min, Integer max) {
-        if (value >= min && value <= max)
-            return true;
-        return false;
-    }
 
 }
