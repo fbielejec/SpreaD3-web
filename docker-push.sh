@@ -18,7 +18,9 @@ docker tag $IMG $NAME:latest
 # dockerhub login
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
+echo "=============================="
 echo "Pushing: " $NAME
+echo "=============================="
 
 # push to dockerhub
 docker push $NAME

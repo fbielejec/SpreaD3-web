@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk8:latest
+FROM adoptopenjdk/openjdk8:x86_64-ubuntu-jdk8u202-b08
 MAINTAINER "Filip Bielejec" <nodrama.io>
 
 COPY target/spread-server.jar .
