@@ -30,11 +30,11 @@ public class LocationEntity {
     @EqualsAndHashCode.Include
     private String name;
 
-    @Column(name = "latitude", nullable = false)
+    @Column(name = "latitude", nullable = true)
     @EqualsAndHashCode.Include
     private Double latitude;
 
-    @Column(name = "longitude", nullable = false)
+    @Column(name = "longitude", nullable = true)
     @EqualsAndHashCode.Include
     private Double longitude;
 
@@ -42,6 +42,11 @@ public class LocationEntity {
     @ManyToOne
     @JoinColumn(name = "fk_tree_id", nullable = false)
     private DiscreteTreeModelEntity tree;
+
+    public LocationEntity (String name, DiscreteTreeModelEntity tree) {
+        this.name = name;
+        this.tree = tree;
+    }
 
     public LocationEntity (String name, Double latitude, Double longitude) {
         this.name=name;
