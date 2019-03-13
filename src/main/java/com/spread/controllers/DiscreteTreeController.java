@@ -256,6 +256,7 @@ public class DiscreteTreeController {
 
             locations.forEach((l) -> l.setTree(model));
 
+            locationRepository.deleteLocationsByTree(model);
             model.setLocations(locations);
             modelRepository.save(model);
 
