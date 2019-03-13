@@ -40,6 +40,7 @@ import com.spread.parsers.GeoJSONParser;
 import com.spread.parsers.TimeParser;
 import com.spread.repositories.DiscreteTreeModelRepository;
 import com.spread.repositories.KeyRepository;
+import com.spread.repositories.LocationRepository;
 import com.spread.services.ipfs.IpfsService;
 import com.spread.services.storage.StorageService;
 import com.spread.services.visualization.VisualizationService;
@@ -80,6 +81,9 @@ public class DiscreteTreeController {
 
     @Autowired
     private DiscreteTreeModelRepository modelRepository;
+
+    @Autowired
+    private LocationRepository locationRepository;
 
     @Autowired
     private KeyRepository keyRepository;
@@ -308,29 +312,10 @@ public class DiscreteTreeController {
                     })
                 .collect(Collectors.toSet());
 
-            // logger.log(ILogger.DEBUG, "parsed locations", new String[][] {
-            //         {"locations", String.valueOf (locations.size())}
-            //     });
-
-            // TODO : adds locations instead of overwriting
-            // model.setLocations(null);
-
-            // logger.log(ILogger.DEBUG, "@@@@ model state 1", new String[][] {
-            //         {"locations",  model.getLocations() == null ? "isNULL" : "notNULL"}
-            //     });
-
+            locationRepository.deleteLocationsByTree(model);
             model.setLocations(locations);
-
-            // logger.log(ILogger.DEBUG, "@@@@ model state 2", new String[][] {
-            //         {"locations", String.valueOf (model.getLocations().size())}
-            //     });
-
             model.setLocationAttribute(attribute);
             modelRepository.save(model);
-
-            // logger.log(ILogger.DEBUG, "@@@@ model state 3", new String[][] {
-            //         {"locations", String.valueOf (model.getLocations().size())}
-            //     });
 
             logger.log(ILogger.INFO, "location attribute successfully set", new String[][] {
                     {"sessionId", sessionId},
@@ -361,87 +346,6 @@ public class DiscreteTreeController {
                 .body(ControllerUtils.jsonResponse("INTERNAL_SERVER_ERROR"));
         }
     }
-
-    // @RequestMapping(path = "/location-states" , method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
-    // public ResponseEntity<Object> updateLocations(HttpServletRequest request,
-    //                                               @RequestHeader(value = "Authorization") String authorizationHeader) {
-
-    //     String sessionId = "null";
-
-    //     try {
-
-    //         String secret = keyRepository.findFirstByOrderByIdDesc().getKey();
-    //         sessionId = ControllerUtils.getSessionId(authorizationHeader, secret);
-
-    //         DiscreteTreeModelEntity model = modelRepository.findBySessionId(sessionId);
-    //         if(model == null) {
-    //             String message = "Session with that id does not exist";
-    //             logger.log(ILogger.WARN, message, new String[][] {
-    //                     {"sessionId", sessionId},
-    //                     {"request-ip", request.getRemoteAddr()}
-    //                 });
-    //             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ControllerUtils.jsonResponse(message));
-    //         };
-
-    //         if(model.getLocationAttribute() == null) {
-    //             String message = "Location attribute value not set";
-    //             logger.log(ILogger.WARN, message, new String[][] {
-    //                     {"sessionId", sessionId},
-    //                     {"request-ip", request.getRemoteAddr()}
-    //                 });
-    //             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-    //                 .header("Location", "/discrete/location")
-    //                 .body(ControllerUtils.jsonResponse(message));
-    //         };
-
-    //         RootedTree tree = ParsersUtils.importRootedTree(model.getTreeFilename());
-
-    //         Set<LocationEntity> locations = tree.getNodes().stream()
-    //             .filter(node -> !tree.isRoot(node))
-    //             .map(node -> {
-    //                     String state = node.getAttribute(model.getLocationAttribute()).toString();
-    //                     // TODO : instead of breaking ties they could become part of the data
-    //                     if (state.contains("+")) {
-    //                         state = state.split("\\+") [0];
-    //                     }
-    //                     return new LocationEntity(state);
-    //                 })
-    //             .collect(Collectors.toSet());
-
-    //         model.setLocations(locations);
-    //         modelRepository.save(model);
-
-    //         logger.log(ILogger.INFO, "Persisted parsed states as discrete locations", new String[][] {
-    //                 {"sessionId", sessionId},
-    //                 {"request-ip", request.getRemoteAddr()},
-    //                 {"count", String.valueOf (locations.size())},
-    //             });
-
-    //         return ResponseEntity.status(HttpStatus.OK).body(ControllerUtils.jsonResponse("OK"));
-    //     } catch (SignatureException e) {
-    //         logger.log(ILogger.ERROR, e);
-    //         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-    //             .header("Authorication", "Bearer")
-    //             .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
-    //     } catch (SpreadException e) {
-    //         logger.log(ILogger.ERROR, e, new String[][] {
-    //                 {"sessionId", sessionId},
-    //             },
-    //             e.getMeta());
-    //         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-    //             .header("Authorication", "Bearer")
-    //             .body(ControllerUtils.jsonResponse("UNAUTHORIZED"));
-    //     } catch (IOException | ImportException e) {
-    //         logger.log(ILogger.ERROR, e, new String[][] {
-    //                 {"sessionId", sessionId},
-    //             });
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-    //             .body(ControllerUtils.jsonResponse("INTERNAL_SERVER_ERROR"));
-    //     }
-    // }
-
-
-
 
     @RequestMapping(path = "/mrsd", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> setMrsd(HttpServletRequest request,
